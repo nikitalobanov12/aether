@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   Calendar,
   Target,
   Settings,
   LogOut,
   Menu,
   Kanban,
+  Sun,
+  CalendarDays,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -36,7 +37,8 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Today", href: "/today", icon: Sun },
+  { name: "This Week", href: "/week", icon: CalendarDays },
   { name: "Boards", href: "/boards", icon: Kanban },
   { name: "Goals", href: "/goals", icon: Target },
   { name: "Calendar", href: "/calendar", icon: Calendar },
