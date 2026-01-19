@@ -45,6 +45,15 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", [
   "incomplete",
 ]);
 
+export const syncStatusEnum = pgEnum("sync_status", [
+  "pending",
+  "syncing",
+  "synced",
+  "failed",
+]);
+
+export const syncTypeEnum = pgEnum("sync_type", ["calendar", "tasks"]);
+
 // ============================================================================
 // AUTH TABLES (Better Auth)
 // ============================================================================
@@ -150,6 +159,8 @@ export const goal = pgTable(
     icon: text("icon"),
     progress: integer("progress").default(0),
     parentGoalId: uuid("parent_goal_id"),
+    sortOrder: integer("sort_order").default(0),
+    archived: boolean("archived").default(false),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
@@ -163,6 +174,36 @@ export const goal = pgTable(
   ],
 );
 
+// Projects (sits between Goals and Tasks in hierarchy)
+export const project = pgTable(
+  "dayflow_project",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id")
+      .notNull()
+      .references(() => goal.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    color: text("color").default("#3b82f6"),
+    icon: text("icon"),
+    sortOrder: integer("sort_order").default(0),
+    archived: boolean("archived").default(false),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    index("project_user_id_idx").on(t.userId),
+    index("project_goal_id_idx").on(t.goalId),
+  ],
+);
+
 // Tasks
 export const task = pgTable(
   "dayflow_task",
@@ -171,9 +212,15 @@ export const task = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    // Legacy board reference - deprecated, use projectId instead
     boardId: uuid("board_id").references(() => board.id, {
       onDelete: "set null",
     }),
+    // New hierarchy: Task belongs to Project (which belongs to Goal)
+    projectId: uuid("project_id").references(() => project.id, {
+      onDelete: "set null",
+    }),
+    // Direct goal reference kept for backwards compatibility
     goalId: uuid("goal_id").references(() => goal.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     description: text("description"),
@@ -189,10 +236,18 @@ export const task = pgTable(
     recurrenceRule: text("recurrence_rule"), // RRULE format
     parentTaskId: uuid("parent_task_id"),
     sortOrder: integer("sort_order").default(0),
+    // "Next Up" task sequencing - lower number = higher priority in queue
+    nextUpOrder: integer("next_up_order"),
+    // Habit tracking - if set, this task is part of a habit
+    habitName: text("habit_name"),
     tags: text("tags").array(),
+    archived: boolean("archived").default(false),
     // Google Calendar sync
     googleEventId: text("google_event_id"),
     googleCalendarId: text("google_calendar_id"),
+    // Google Tasks sync
+    googleTasksId: text("google_tasks_id"),
+    googleTasksListId: text("google_tasks_list_id"),
     lastSyncedAt: timestamp("last_synced_at"),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
@@ -204,10 +259,12 @@ export const task = pgTable(
   (t) => [
     index("task_user_id_idx").on(t.userId),
     index("task_board_id_idx").on(t.boardId),
+    index("task_project_id_idx").on(t.projectId),
     index("task_goal_id_idx").on(t.goalId),
     index("task_status_idx").on(t.status),
     index("task_due_date_idx").on(t.dueDate),
     index("task_scheduled_idx").on(t.scheduledStart, t.scheduledEnd),
+    index("task_next_up_idx").on(t.projectId, t.nextUpOrder),
   ],
 );
 
@@ -237,6 +294,120 @@ export const timeBlock = pgTable(
     index("time_block_user_id_idx").on(t.userId),
     index("time_block_task_id_idx").on(t.taskId),
     index("time_block_time_idx").on(t.startTime, t.endTime),
+  ],
+);
+
+// Completed Task History (preserves record of all completions)
+export const completedTask = pgTable(
+  "dayflow_completed_task",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => task.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").references(() => project.id, {
+      onDelete: "set null",
+    }),
+    goalId: uuid("goal_id").references(() => goal.id, { onDelete: "set null" }),
+    // Snapshot of task data at completion time
+    taskTitle: text("task_title").notNull(),
+    taskPriority: taskPriorityEnum("task_priority"),
+    completedAt: timestamp("completed_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    timeSpentMinutes: integer("time_spent_minutes"),
+    notes: text("notes"),
+  },
+  (t) => [
+    index("completed_task_user_id_idx").on(t.userId),
+    index("completed_task_completed_at_idx").on(t.completedAt),
+    index("completed_task_project_id_idx").on(t.projectId),
+  ],
+);
+
+// Habit Streaks (tracks recurring habits with history preserved even when broken)
+export const habitStreak = pgTable(
+  "dayflow_habit_streak",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    habitName: text("habit_name").notNull(),
+    currentStreakDays: integer("current_streak_days").default(0).notNull(),
+    bestStreakDays: integer("best_streak_days").default(0).notNull(),
+    lastCompletedDate: timestamp("last_completed_date"),
+    // JSON array of {date: string, completed: boolean} for history visualization
+    streakHistory: jsonb("streak_history").default([]),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    index("habit_streak_user_id_idx").on(t.userId),
+    index("habit_streak_name_idx").on(t.userId, t.habitName),
+  ],
+);
+
+// Google Integration (OAuth tokens for Calendar and Tasks API)
+export const googleIntegration = pgTable(
+  "dayflow_google_integration",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token").notNull(),
+    tokenExpiresAt: timestamp("token_expires_at").notNull(),
+    // Google Calendar settings
+    calendarId: text("calendar_id"), // Primary calendar ID
+    calendarEnabled: boolean("calendar_enabled").default(true),
+    // Google Tasks settings
+    tasksListId: text("tasks_list_id"), // Default tasks list ID
+    tasksEnabled: boolean("tasks_enabled").default(true),
+    // Sync settings
+    lastCalendarSyncAt: timestamp("last_calendar_sync_at"),
+    lastTasksSyncAt: timestamp("last_tasks_sync_at"),
+    connectedAt: timestamp("connected_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [index("google_integration_user_id_idx").on(t.userId)],
+);
+
+// Sync Log (tracks all sync operations for debugging and status)
+export const syncLog = pgTable(
+  "dayflow_sync_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    syncType: syncTypeEnum("sync_type").notNull(),
+    googleResourceId: text("google_resource_id"),
+    appResourceId: text("app_resource_id"),
+    appResourceType: text("app_resource_type"), // 'task', 'event'
+    status: syncStatusEnum("status").default("pending").notNull(),
+    errorMessage: text("error_message"),
+    syncedAt: timestamp("synced_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    index("sync_log_user_id_idx").on(t.userId),
+    index("sync_log_google_resource_idx").on(t.googleResourceId),
+    index("sync_log_app_resource_idx").on(t.appResourceId),
   ],
 );
 
@@ -325,8 +496,15 @@ export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   boards: many(board),
   goals: many(goal),
+  projects: many(project),
   tasks: many(task),
   timeBlocks: many(timeBlock),
+  completedTasks: many(completedTask),
+  habitStreaks: many(habitStreak),
+  googleIntegration: one(googleIntegration, {
+    fields: [user.id],
+    references: [googleIntegration.userId],
+  }),
   preferences: one(userPreferences, {
     fields: [user.id],
     references: [userPreferences.id],
@@ -352,6 +530,7 @@ export const boardRelations = relations(board, ({ one, many }) => ({
 
 export const goalRelations = relations(goal, ({ one, many }) => ({
   user: one(user, { fields: [goal.userId], references: [user.id] }),
+  projects: many(project),
   tasks: many(task),
   parentGoal: one(goal, {
     fields: [goal.parentGoalId],
@@ -361,9 +540,17 @@ export const goalRelations = relations(goal, ({ one, many }) => ({
   childGoals: many(goal, { relationName: "goalHierarchy" }),
 }));
 
+export const projectRelations = relations(project, ({ one, many }) => ({
+  user: one(user, { fields: [project.userId], references: [user.id] }),
+  goal: one(goal, { fields: [project.goalId], references: [goal.id] }),
+  tasks: many(task),
+  completedTasks: many(completedTask),
+}));
+
 export const taskRelations = relations(task, ({ one, many }) => ({
   user: one(user, { fields: [task.userId], references: [user.id] }),
   board: one(board, { fields: [task.boardId], references: [board.id] }),
+  project: one(project, { fields: [task.projectId], references: [project.id] }),
   goal: one(goal, { fields: [task.goalId], references: [goal.id] }),
   parentTask: one(task, {
     fields: [task.parentTaskId],
@@ -372,12 +559,37 @@ export const taskRelations = relations(task, ({ one, many }) => ({
   }),
   subtasks: many(task, { relationName: "taskHierarchy" }),
   timeBlocks: many(timeBlock),
+  completedRecords: many(completedTask),
 }));
 
 export const timeBlockRelations = relations(timeBlock, ({ one }) => ({
   user: one(user, { fields: [timeBlock.userId], references: [user.id] }),
   task: one(task, { fields: [timeBlock.taskId], references: [task.id] }),
 }));
+
+export const completedTaskRelations = relations(completedTask, ({ one }) => ({
+  user: one(user, { fields: [completedTask.userId], references: [user.id] }),
+  task: one(task, { fields: [completedTask.taskId], references: [task.id] }),
+  project: one(project, {
+    fields: [completedTask.projectId],
+    references: [project.id],
+  }),
+  goal: one(goal, { fields: [completedTask.goalId], references: [goal.id] }),
+}));
+
+export const habitStreakRelations = relations(habitStreak, ({ one }) => ({
+  user: one(user, { fields: [habitStreak.userId], references: [user.id] }),
+}));
+
+export const googleIntegrationRelations = relations(
+  googleIntegration,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [googleIntegration.userId],
+      references: [user.id],
+    }),
+  }),
+);
 
 export const subscriptionRelations = relations(subscription, ({ one }) => ({
   user: one(user, { fields: [subscription.userId], references: [user.id] }),
@@ -396,11 +608,26 @@ export type NewBoard = typeof board.$inferInsert;
 export type Goal = typeof goal.$inferSelect;
 export type NewGoal = typeof goal.$inferInsert;
 
+export type Project = typeof project.$inferSelect;
+export type NewProject = typeof project.$inferInsert;
+
 export type Task = typeof task.$inferSelect;
 export type NewTask = typeof task.$inferInsert;
 
 export type TimeBlock = typeof timeBlock.$inferSelect;
 export type NewTimeBlock = typeof timeBlock.$inferInsert;
+
+export type CompletedTask = typeof completedTask.$inferSelect;
+export type NewCompletedTask = typeof completedTask.$inferInsert;
+
+export type HabitStreak = typeof habitStreak.$inferSelect;
+export type NewHabitStreak = typeof habitStreak.$inferInsert;
+
+export type GoogleIntegration = typeof googleIntegration.$inferSelect;
+export type NewGoogleIntegration = typeof googleIntegration.$inferInsert;
+
+export type SyncLog = typeof syncLog.$inferSelect;
+export type NewSyncLog = typeof syncLog.$inferInsert;
 
 export type UserPreferences = typeof userPreferences.$inferSelect;
 export type NewUserPreferences = typeof userPreferences.$inferInsert;
