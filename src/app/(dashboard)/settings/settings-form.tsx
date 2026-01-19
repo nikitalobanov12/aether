@@ -46,6 +46,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
   const [preferences, setPreferences] = useState(initialPreferences);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: _currentPrefs } = api.userPreferences.get.useQuery(undefined, {
     initialData: initialPreferences,
   });

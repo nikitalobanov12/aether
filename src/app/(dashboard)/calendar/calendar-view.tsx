@@ -102,12 +102,14 @@ export function CalendarView({
   });
 
   // These mutations are prepared for the edit/delete UI to be added
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _updateTimeBlock = api.timeBlock.update.useMutation({
     onSuccess: () => {
       void refetchBlocks();
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _deleteTimeBlock = api.timeBlock.delete.useMutation({
     onSuccess: () => {
       void refetchBlocks();
