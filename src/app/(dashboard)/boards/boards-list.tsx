@@ -5,7 +5,13 @@ import { Plus, MoreHorizontal, Kanban, ChevronRight } from "lucide-react";
 
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -88,7 +94,7 @@ export function BoardsList() {
             >
               Boards
             </Button>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
             <h2 className="text-xl font-semibold">{selectedBoard.name}</h2>
           </div>
           <DropdownMenu>
@@ -126,10 +132,10 @@ export function BoardsList() {
       {/* Create Board Card */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogTrigger asChild>
-          <Card className="flex cursor-pointer items-center justify-center border-dashed transition-colors hover:border-primary hover:bg-muted/50">
+          <Card className="hover:border-primary hover:bg-muted/50 flex cursor-pointer items-center justify-center border-dashed transition-colors">
             <CardContent className="flex flex-col items-center gap-2 py-8">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Plus className="h-6 w-6 text-primary" />
+              <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
+                <Plus className="text-primary h-6 w-6" />
               </div>
               <p className="font-medium">Create Board</p>
             </CardContent>
@@ -180,7 +186,7 @@ export function BoardsList() {
       {boards.map((board) => (
         <Card
           key={board.id}
-          className="cursor-pointer transition-colors hover:bg-muted/50"
+          className="hover:bg-muted/50 cursor-pointer transition-colors"
           onClick={() => setSelectedBoard(board)}
         >
           <CardHeader className="pb-3">
@@ -192,7 +198,10 @@ export function BoardsList() {
                 <Kanban className="h-5 w-5 text-white" />
               </div>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuTrigger
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -226,7 +235,7 @@ export function BoardsList() {
 
       {boards.length === 0 && (
         <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-          <Kanban className="mb-4 h-12 w-12 text-muted-foreground" />
+          <Kanban className="text-muted-foreground mb-4 h-12 w-12" />
           <h3 className="text-lg font-semibold">No boards yet</h3>
           <p className="text-muted-foreground">
             Create your first board to start organizing tasks

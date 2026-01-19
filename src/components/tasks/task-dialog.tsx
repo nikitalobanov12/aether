@@ -64,14 +64,14 @@ export function TaskDialog({
 
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
-  const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">(
-    task?.priority ?? "medium"
-  );
+  const [priority, setPriority] = useState<
+    "low" | "medium" | "high" | "urgent"
+  >(task?.priority ?? "medium");
   const [dueDate, setDueDate] = useState<Date | undefined>(
-    task?.dueDate ? new Date(task.dueDate) : undefined
+    task?.dueDate ? new Date(task.dueDate) : undefined,
   );
   const [estimatedMinutes, setEstimatedMinutes] = useState<string>(
-    task?.estimatedMinutes?.toString() ?? ""
+    task?.estimatedMinutes?.toString() ?? "",
   );
   const [tagsInput, setTagsInput] = useState(task?.tags?.join(", ") ?? "");
 
@@ -116,7 +116,9 @@ export function TaskDialog({
       description: description.trim() || undefined,
       priority,
       dueDate: dueDate?.toISOString(),
-      estimatedMinutes: estimatedMinutes ? parseInt(estimatedMinutes, 10) : undefined,
+      estimatedMinutes: estimatedMinutes
+        ? parseInt(estimatedMinutes, 10)
+        : undefined,
       tags: tags.length > 0 ? tags : undefined,
       boardId,
     };
@@ -172,7 +174,10 @@ export function TaskDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label>Priority</Label>
-                <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
+                <Select
+                  value={priority}
+                  onValueChange={(v) => setPriority(v as typeof priority)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -193,7 +198,7 @@ export function TaskDialog({
                       variant="outline"
                       className={cn(
                         "justify-start text-left font-normal",
-                        !dueDate && "text-muted-foreground"
+                        !dueDate && "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />

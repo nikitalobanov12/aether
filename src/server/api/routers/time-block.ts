@@ -11,7 +11,7 @@ export const timeBlockRouter = createTRPCRouter({
       z.object({
         startDate: z.string().datetime(),
         endDate: z.string().datetime(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const startDate = new Date(input.startDate);
@@ -21,7 +21,7 @@ export const timeBlockRouter = createTRPCRouter({
         where: and(
           eq(timeBlock.userId, ctx.session.user.id),
           gte(timeBlock.startTime, startDate),
-          lte(timeBlock.endTime, endDate)
+          lte(timeBlock.endTime, endDate),
         ),
         orderBy: (tb, { asc }) => [asc(tb.startTime)],
         with: {
@@ -42,7 +42,7 @@ export const timeBlockRouter = createTRPCRouter({
         endTime: z.string().datetime(),
         color: z.string().optional(),
         notes: z.string().max(1000).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [newBlock] = await ctx.db
@@ -70,8 +70,8 @@ export const timeBlockRouter = createTRPCRouter({
           .where(
             and(
               eq(task.id, input.taskId),
-              eq(task.userId, ctx.session.user.id)
-            )
+              eq(task.userId, ctx.session.user.id),
+            ),
           );
       }
 
@@ -89,7 +89,7 @@ export const timeBlockRouter = createTRPCRouter({
         color: z.string().optional(),
         notes: z.string().max(1000).optional(),
         isCompleted: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, startTime, endTime, ...rest } = input;
@@ -110,10 +110,7 @@ export const timeBlockRouter = createTRPCRouter({
         .update(timeBlock)
         .set(updateData)
         .where(
-          and(
-            eq(timeBlock.id, id),
-            eq(timeBlock.userId, ctx.session.user.id)
-          )
+          and(eq(timeBlock.id, id), eq(timeBlock.userId, ctx.session.user.id)),
         )
         .returning();
 
@@ -135,8 +132,8 @@ export const timeBlockRouter = createTRPCRouter({
           .where(
             and(
               eq(task.id, updated.taskId),
-              eq(task.userId, ctx.session.user.id)
-            )
+              eq(task.userId, ctx.session.user.id),
+            ),
           );
       }
 
@@ -151,7 +148,7 @@ export const timeBlockRouter = createTRPCRouter({
       const block = await ctx.db.query.timeBlock.findFirst({
         where: and(
           eq(timeBlock.id, input.id),
-          eq(timeBlock.userId, ctx.session.user.id)
+          eq(timeBlock.userId, ctx.session.user.id),
         ),
       });
 
@@ -160,8 +157,8 @@ export const timeBlockRouter = createTRPCRouter({
         .where(
           and(
             eq(timeBlock.id, input.id),
-            eq(timeBlock.userId, ctx.session.user.id)
-          )
+            eq(timeBlock.userId, ctx.session.user.id),
+          ),
         );
 
       // Clear scheduled time from linked task if exists
@@ -176,8 +173,8 @@ export const timeBlockRouter = createTRPCRouter({
           .where(
             and(
               eq(task.id, block.taskId),
-              eq(task.userId, ctx.session.user.id)
-            )
+              eq(task.userId, ctx.session.user.id),
+            ),
           );
       }
 

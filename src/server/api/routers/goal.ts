@@ -15,20 +15,19 @@ export const goalRouter = createTRPCRouter({
   // Get all goals for the current user
   getAll: protectedProcedure
     .input(
-      z.object({
-        includeCompleted: z.boolean().optional().default(false),
-        parentGoalId: z.string().uuid().nullable().optional(),
-      }).optional()
+      z
+        .object({
+          includeCompleted: z.boolean().optional().default(false),
+          parentGoalId: z.string().uuid().nullable().optional(),
+        })
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
       const filters = [eq(goal.userId, ctx.session.user.id)];
 
       if (!input?.includeCompleted) {
         filters.push(
-          and(
-            eq(goal.status, "not_started"),
-            eq(goal.status, "in_progress")
-          )!
+          and(eq(goal.status, "not_started"), eq(goal.status, "in_progress"))!,
         );
       }
 
@@ -84,7 +83,7 @@ export const goalRouter = createTRPCRouter({
         color: z.string().optional(),
         icon: z.string().optional(),
         parentGoalId: z.string().uuid().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [newGoal] = await ctx.db
@@ -115,7 +114,7 @@ export const goalRouter = createTRPCRouter({
         color: z.string().optional(),
         icon: z.string().optional(),
         progress: z.number().int().min(0).max(100).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, targetDate, ...rest } = input;
@@ -154,7 +153,7 @@ export const goalRouter = createTRPCRouter({
       await ctx.db
         .delete(goal)
         .where(
-          and(eq(goal.id, input.id), eq(goal.userId, ctx.session.user.id))
+          and(eq(goal.id, input.id), eq(goal.userId, ctx.session.user.id)),
         );
 
       return { success: true };
@@ -168,7 +167,7 @@ export const goalRouter = createTRPCRouter({
       const goalTasks = await ctx.db.query.task.findMany({
         where: and(
           eq(task.goalId, input.id),
-          eq(task.userId, ctx.session.user.id)
+          eq(task.userId, ctx.session.user.id),
         ),
       });
 
@@ -177,7 +176,7 @@ export const goalRouter = createTRPCRouter({
       }
 
       const completedTasks = goalTasks.filter(
-        (t) => t.status === "completed"
+        (t) => t.status === "completed",
       ).length;
       const progress = Math.round((completedTasks / goalTasks.length) * 100);
 

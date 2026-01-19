@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Target, MoreHorizontal, CheckCircle2, Circle } from "lucide-react";
+import {
+  Plus,
+  Target,
+  MoreHorizontal,
+  CheckCircle2,
+  Circle,
+} from "lucide-react";
 
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -34,11 +40,19 @@ import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 
 // Simple Progress component since shadcn doesn't include it by default
-function ProgressBar({ value, className }: { value: number; className?: string }) {
+function ProgressBar({
+  value,
+  className,
+}: {
+  value: number;
+  className?: string;
+}) {
   return (
-    <div className={`h-2 w-full overflow-hidden rounded-full bg-secondary ${className}`}>
+    <div
+      className={`bg-secondary h-2 w-full overflow-hidden rounded-full ${className}`}
+    >
       <div
-        className="h-full bg-primary transition-all"
+        className="bg-primary h-full transition-all"
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>
@@ -156,11 +170,13 @@ export function GoalsList() {
 
       {/* Active Goals */}
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Active Goals ({activeGoals.length})</h2>
+        <h2 className="text-lg font-semibold">
+          Active Goals ({activeGoals.length})
+        </h2>
         {activeGoals.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Target className="mb-4 h-12 w-12 text-muted-foreground" />
+              <Target className="text-muted-foreground mb-4 h-12 w-12" />
               <h3 className="text-lg font-semibold">No active goals</h3>
               <p className="text-muted-foreground">
                 Create a goal to start tracking your progress
@@ -179,7 +195,7 @@ export function GoalsList() {
                       className="h-6 w-6 flex-shrink-0"
                       onClick={() => handleToggleComplete(goal)}
                     >
-                      <Circle className="h-5 w-5 text-muted-foreground" />
+                      <Circle className="text-muted-foreground h-5 w-5" />
                     </Button>
                     <div className="flex-1 px-2">
                       <CardTitle className="text-base">{goal.title}</CardTitle>
@@ -221,7 +237,9 @@ export function GoalsList() {
                       </Badge>
                       <Badge
                         variant={
-                          goal.status === "in_progress" ? "default" : "secondary"
+                          goal.status === "in_progress"
+                            ? "default"
+                            : "secondary"
                         }
                       >
                         {goal.status === "in_progress"

@@ -41,7 +41,7 @@ interface SchedulingContext {
  */
 export async function suggestTaskSchedule(
   task: TaskToSchedule,
-  context: SchedulingContext
+  context: SchedulingContext,
 ): Promise<ScheduleSlot | null> {
   if (!hf) {
     console.warn("Hugging Face API key not configured");
@@ -52,7 +52,7 @@ export async function suggestTaskSchedule(
   const busySlots = context.existingBlocks
     .map(
       (block) =>
-        `- ${block.startTime.toISOString()} to ${block.endTime.toISOString()}`
+        `- ${block.startTime.toISOString()} to ${block.endTime.toISOString()}`,
     )
     .join("\n");
 
@@ -119,7 +119,7 @@ interface ParsedTask {
  */
 export async function parseTaskFromText(
   text: string,
-  currentDate: Date
+  currentDate: Date,
 ): Promise<ParsedTask | null> {
   if (!hf) {
     console.warn("Hugging Face API key not configured");
@@ -164,13 +164,13 @@ Examples:
     }
 
     const result = JSON.parse(jsonMatch[0]) as ParsedTask;
-    
+
     // Validate priority
     const validPriorities = ["low", "medium", "high", "urgent"];
     if (!validPriorities.includes(result.priority)) {
       result.priority = "medium";
     }
-    
+
     return result;
   } catch (error) {
     console.error("AI parse error:", error);
@@ -183,7 +183,7 @@ Examples:
  */
 export async function suggestTaskBreakdown(
   taskTitle: string,
-  taskDescription: string | null
+  taskDescription: string | null,
 ): Promise<string[] | null> {
   if (!hf) {
     console.warn("Hugging Face API key not configured");

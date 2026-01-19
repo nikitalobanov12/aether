@@ -24,7 +24,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "ci": "bun run check && bun run test:run"
+    "ci": "bun run check && bun run test:run",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.2",
@@ -79,6 +80,7 @@
     "eslint": "^9.23.0",
     "eslint-config-next": "^15.2.3",
     "eslint-plugin-drizzle": "^0.2.3",
+    "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",

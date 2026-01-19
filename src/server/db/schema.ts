@@ -123,10 +123,14 @@ export const board = pgTable(
     icon: text("icon"),
     isDefault: boolean("is_default").default(false),
     sortOrder: integer("sort_order").default(0),
-    createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
   },
-  (t) => [index("board_user_id_idx").on(t.userId)]
+  (t) => [index("board_user_id_idx").on(t.userId)],
 );
 
 // Goals
@@ -146,13 +150,17 @@ export const goal = pgTable(
     icon: text("icon"),
     progress: integer("progress").default(0),
     parentGoalId: uuid("parent_goal_id"),
-    createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
   },
   (t) => [
     index("goal_user_id_idx").on(t.userId),
     index("goal_status_idx").on(t.status),
-  ]
+  ],
 );
 
 // Tasks
@@ -186,8 +194,12 @@ export const task = pgTable(
     googleEventId: text("google_event_id"),
     googleCalendarId: text("google_calendar_id"),
     lastSyncedAt: timestamp("last_synced_at"),
-    createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
   },
   (t) => [
     index("task_user_id_idx").on(t.userId),
@@ -196,7 +208,7 @@ export const task = pgTable(
     index("task_status_idx").on(t.status),
     index("task_due_date_idx").on(t.dueDate),
     index("task_scheduled_idx").on(t.scheduledStart, t.scheduledEnd),
-  ]
+  ],
 );
 
 // Time Blocks (for calendar view)
@@ -214,14 +226,18 @@ export const timeBlock = pgTable(
     color: text("color"),
     isCompleted: boolean("is_completed").default(false),
     notes: text("notes"),
-    createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
   },
   (t) => [
     index("time_block_user_id_idx").on(t.userId),
     index("time_block_task_id_idx").on(t.taskId),
     index("time_block_time_idx").on(t.startTime, t.endTime),
-  ]
+  ],
 );
 
 // User Preferences (settings)
@@ -263,8 +279,12 @@ export const userPreferences = pgTable("dayflow_user_preferences", {
   hasCompletedOnboarding: boolean("has_completed_onboarding").default(false),
   onboardingData: jsonb("onboarding_data"),
 
-  createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
-  updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+  createdAt: timestamp("created_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp("updated_at")
+    .$defaultFn(() => new Date())
+    .notNull(),
 });
 
 // Subscriptions (Stripe)
@@ -283,13 +303,17 @@ export const subscription = pgTable(
     currentPeriodStart: timestamp("current_period_start"),
     currentPeriodEnd: timestamp("current_period_end"),
     cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
-    createdAt: timestamp("created_at").$defaultFn(() => new Date()).notNull(),
-    updatedAt: timestamp("updated_at").$defaultFn(() => new Date()).notNull(),
+    createdAt: timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
   },
   (t) => [
     index("subscription_user_id_idx").on(t.userId),
     index("subscription_stripe_customer_idx").on(t.stripeCustomerId),
-  ]
+  ],
 );
 
 // ============================================================================

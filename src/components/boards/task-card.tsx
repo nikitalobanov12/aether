@@ -89,9 +89,9 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
   return (
     <div
       className={cn(
-        "group rounded-lg border bg-card p-3 shadow-sm transition-all",
+        "group bg-card rounded-lg border p-3 shadow-sm transition-all",
         isDragging && "rotate-3 shadow-lg",
-        task.status === "completed" && "opacity-60"
+        task.status === "completed" && "opacity-60",
       )}
     >
       {/* Priority indicator and title */}
@@ -99,21 +99,21 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
         <div
           className={cn(
             "mt-1.5 h-2 w-2 flex-shrink-0 rounded-full",
-            priorityDots[task.priority]
+            priorityDots[task.priority],
           )}
         />
         <div className="min-w-0 flex-1">
           <p
             className={cn(
-              "text-sm font-medium leading-tight",
+              "text-sm leading-tight font-medium",
               task.status === "completed" &&
-                "text-muted-foreground line-through"
+                "text-muted-foreground line-through",
             )}
           >
             {task.title}
           </p>
           {task.description && (
-            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+            <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
               {task.description}
             </p>
           )}
@@ -130,11 +130,16 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleComplete}>
-              {task.status === "completed" ? "Mark incomplete" : "Mark complete"}
+              {task.status === "completed"
+                ? "Mark incomplete"
+                : "Mark complete"}
             </DropdownMenuItem>
             <DropdownMenuItem>Edit task</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-destructive"
+            >
               Delete task
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -154,7 +159,7 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
           <div
             className={cn(
               "flex items-center gap-1 text-xs",
-              isOverdue ? "text-destructive" : "text-muted-foreground"
+              isOverdue ? "text-destructive" : "text-muted-foreground",
             )}
           >
             <Calendar className="h-3 w-3" />
@@ -163,14 +168,14 @@ export function TaskCard({ task, isDragging }: TaskCardProps) {
         )}
 
         {task.estimatedMinutes && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />
             {task.estimatedMinutes}m
           </div>
         )}
 
         {task.goalId && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-1 text-xs">
             <Target className="h-3 w-3" />
           </div>
         )}

@@ -1,10 +1,7 @@
 import { z } from "zod";
 import { eq, and, desc, asc } from "drizzle-orm";
 
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { board } from "~/server/db/schema";
 
 export const boardRouter = createTRPCRouter({
@@ -24,7 +21,7 @@ export const boardRouter = createTRPCRouter({
       const result = await ctx.db.query.board.findFirst({
         where: and(
           eq(board.id, input.id),
-          eq(board.userId, ctx.session.user.id)
+          eq(board.userId, ctx.session.user.id),
         ),
         with: {
           tasks: {
@@ -43,7 +40,7 @@ export const boardRouter = createTRPCRouter({
         description: z.string().max(500).optional(),
         color: z.string().optional(),
         icon: z.string().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [newBoard] = await ctx.db
@@ -70,7 +67,7 @@ export const boardRouter = createTRPCRouter({
         color: z.string().optional(),
         icon: z.string().optional(),
         sortOrder: z.number().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, ...data } = input;
@@ -91,7 +88,7 @@ export const boardRouter = createTRPCRouter({
       await ctx.db
         .delete(board)
         .where(
-          and(eq(board.id, input.id), eq(board.userId, ctx.session.user.id))
+          and(eq(board.id, input.id), eq(board.userId, ctx.session.user.id)),
         );
 
       return { success: true };
@@ -112,7 +109,7 @@ export const boardRouter = createTRPCRouter({
         .update(board)
         .set({ isDefault: true, updatedAt: new Date() })
         .where(
-          and(eq(board.id, input.id), eq(board.userId, ctx.session.user.id))
+          and(eq(board.id, input.id), eq(board.userId, ctx.session.user.id)),
         )
         .returning();
 

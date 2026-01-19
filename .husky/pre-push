@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "Running pre-push checks..."
+
+# Run lint and type check
+bun run check
+if [ $? -ne 0 ]; then
+  echo "Lint/Type check failed. Push aborted."
+  exit 1
+fi
+
+# Run tests
+bun run test:run
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Push aborted."
+  exit 1
+fi
+
+echo "All checks passed!"

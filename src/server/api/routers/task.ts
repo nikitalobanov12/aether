@@ -5,18 +5,25 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { task } from "~/server/db/schema";
 
 const taskPrioritySchema = z.enum(["low", "medium", "high", "urgent"]);
-const taskStatusSchema = z.enum(["todo", "in_progress", "completed", "cancelled"]);
+const taskStatusSchema = z.enum([
+  "todo",
+  "in_progress",
+  "completed",
+  "cancelled",
+]);
 
 export const taskRouter = createTRPCRouter({
   // Get all tasks for the current user
   getAll: protectedProcedure
     .input(
-      z.object({
-        boardId: z.string().uuid().optional(),
-        goalId: z.string().uuid().optional(),
-        status: taskStatusSchema.optional(),
-        includeCompleted: z.boolean().optional().default(false),
-      }).optional()
+      z
+        .object({
+          boardId: z.string().uuid().optional(),
+          goalId: z.string().uuid().optional(),
+          status: taskStatusSchema.optional(),
+          includeCompleted: z.boolean().optional().default(false),
+        })
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
       const filters = [eq(task.userId, ctx.session.user.id)];
@@ -35,10 +42,7 @@ export const taskRouter = createTRPCRouter({
 
       if (!input?.includeCompleted) {
         filters.push(
-          or(
-            eq(task.status, "todo"),
-            eq(task.status, "in_progress")
-          )!
+          or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
         );
       }
 
@@ -76,7 +80,7 @@ export const taskRouter = createTRPCRouter({
       z.object({
         startDate: z.string().datetime(),
         endDate: z.string().datetime(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const startDate = new Date(input.startDate);
@@ -89,11 +93,11 @@ export const taskRouter = createTRPCRouter({
             // Tasks with scheduled time in range
             and(
               gte(task.scheduledStart, startDate),
-              lte(task.scheduledStart, endDate)
+              lte(task.scheduledStart, endDate),
             ),
             // Tasks with due date in range
-            and(gte(task.dueDate, startDate), lte(task.dueDate, endDate))
-          )
+            and(gte(task.dueDate, startDate), lte(task.dueDate, endDate)),
+          ),
         ),
         orderBy: [asc(task.scheduledStart), asc(task.dueDate)],
         with: {
@@ -121,7 +125,7 @@ export const taskRouter = createTRPCRouter({
         estimatedMinutes: z.number().int().positive().optional(),
         tags: z.array(z.string()).optional(),
         parentTaskId: z.string().uuid().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [newTask] = await ctx.db
@@ -168,7 +172,7 @@ export const taskRouter = createTRPCRouter({
         actualMinutes: z.number().int().positive().nullable().optional(),
         tags: z.array(z.string()).optional(),
         sortOrder: z.number().int().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { id, dueDate, scheduledStart, scheduledEnd, ...rest } = input;
@@ -214,7 +218,7 @@ export const taskRouter = createTRPCRouter({
       await ctx.db
         .delete(task)
         .where(
-          and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id))
+          and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id)),
         );
 
       return { success: true };
@@ -226,7 +230,7 @@ export const taskRouter = createTRPCRouter({
       z.object({
         taskId: z.string().uuid(),
         boardId: z.string().uuid().nullable(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [updated] = await ctx.db
@@ -236,7 +240,7 @@ export const taskRouter = createTRPCRouter({
           updatedAt: new Date(),
         })
         .where(
-          and(eq(task.id, input.taskId), eq(task.userId, ctx.session.user.id))
+          and(eq(task.id, input.taskId), eq(task.userId, ctx.session.user.id)),
         )
         .returning();
 
@@ -252,9 +256,9 @@ export const taskRouter = createTRPCRouter({
             id: z.string().uuid(),
             sortOrder: z.number().int(),
             status: taskStatusSchema.optional(),
-          })
+          }),
         ),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Update each task's sort order
@@ -268,9 +272,9 @@ export const taskRouter = createTRPCRouter({
               updatedAt: new Date(),
             })
             .where(
-              and(eq(task.id, t.id), eq(task.userId, ctx.session.user.id))
-            )
-        )
+              and(eq(task.id, t.id), eq(task.userId, ctx.session.user.id)),
+            ),
+        ),
       );
 
       return { success: true };

@@ -21,14 +21,14 @@ export const aiRouter = createTRPCRouter({
     .input(
       z.object({
         taskId: z.string().uuid(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Get the task
       const taskData = await ctx.db.query.task.findFirst({
         where: and(
           eq(task.id, input.taskId),
-          eq(task.userId, ctx.session.user.id)
+          eq(task.userId, ctx.session.user.id),
         ),
       });
 
@@ -58,7 +58,7 @@ export const aiRouter = createTRPCRouter({
         where: and(
           eq(timeBlock.userId, ctx.session.user.id),
           gte(timeBlock.startTime, now),
-          lte(timeBlock.endTime, twoWeeksLater)
+          lte(timeBlock.endTime, twoWeeksLater),
         ),
       });
 
@@ -67,7 +67,7 @@ export const aiRouter = createTRPCRouter({
         where: and(
           eq(task.userId, ctx.session.user.id),
           gte(task.scheduledStart, now),
-          lte(task.scheduledEnd, twoWeeksLater)
+          lte(task.scheduledEnd, twoWeeksLater),
         ),
       });
 
@@ -101,7 +101,7 @@ export const aiRouter = createTRPCRouter({
           maxChunkMinutes: prefs?.maxTaskChunkSize ?? 120,
           existingBlocks: busySlots,
           currentDate: now,
-        }
+        },
       );
 
       return suggestion;
@@ -112,7 +112,7 @@ export const aiRouter = createTRPCRouter({
     .input(
       z.object({
         text: z.string().min(1).max(1000),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       const result = await parseTaskFromText(input.text, new Date());
@@ -126,7 +126,7 @@ export const aiRouter = createTRPCRouter({
         text: z.string().min(1).max(1000),
         boardId: z.string().uuid().optional(),
         goalId: z.string().uuid().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const parsed = await parseTaskFromText(input.text, new Date());
@@ -167,13 +167,13 @@ export const aiRouter = createTRPCRouter({
     .input(
       z.object({
         taskId: z.string().uuid(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const taskData = await ctx.db.query.task.findFirst({
         where: and(
           eq(task.id, input.taskId),
-          eq(task.userId, ctx.session.user.id)
+          eq(task.userId, ctx.session.user.id),
         ),
       });
 
@@ -183,7 +183,7 @@ export const aiRouter = createTRPCRouter({
 
       const suggestions = await suggestTaskBreakdown(
         taskData.title,
-        taskData.description
+        taskData.description,
       );
 
       return suggestions;
@@ -195,14 +195,14 @@ export const aiRouter = createTRPCRouter({
       z.object({
         parentTaskId: z.string().uuid(),
         subtaskTitles: z.array(z.string().min(1).max(500)),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Verify parent task exists and belongs to user
       const parentTask = await ctx.db.query.task.findFirst({
         where: and(
           eq(task.id, input.parentTaskId),
-          eq(task.userId, ctx.session.user.id)
+          eq(task.userId, ctx.session.user.id),
         ),
       });
 
@@ -221,7 +221,7 @@ export const aiRouter = createTRPCRouter({
             boardId: parentTask.boardId,
             goalId: parentTask.goalId,
             sortOrder: index,
-          }))
+          })),
         )
         .returning();
 

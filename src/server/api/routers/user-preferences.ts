@@ -61,7 +61,7 @@ export const userPreferencesRouter = createTRPCRouter({
         // Onboarding
         hasCompletedOnboarding: z.boolean().optional(),
         onboardingData: z.record(z.unknown()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Ensure preferences exist
@@ -99,7 +99,7 @@ export const userPreferencesRouter = createTRPCRouter({
     .input(
       z.object({
         onboardingData: z.record(z.unknown()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const [updated] = await ctx.db

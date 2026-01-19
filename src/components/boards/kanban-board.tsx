@@ -66,7 +66,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
             }
             return task;
           });
-        }
+        },
       );
 
       return { previousTasks };
@@ -75,7 +75,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
       if (context?.previousTasks) {
         utils.task.getAll.setData(
           { boardId: board.id, includeCompleted: true },
-          context.previousTasks
+          context.previousTasks,
         );
       }
     },
@@ -92,7 +92,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const tasksByStatus = useMemo(() => {
@@ -112,7 +112,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
     // Sort by sortOrder
     Object.keys(grouped).forEach((status) => {
       grouped[status as TaskStatus].sort(
-        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
       );
     });
 
@@ -121,7 +121,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
 
   const activeTask = useMemo(
     () => tasks.find((task) => task.id === activeId),
-    [activeId, tasks]
+    [activeId, tasks],
   );
 
   function handleDragStart(event: DragStartEvent) {
@@ -149,7 +149,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
               }
               return task;
             });
-          }
+          },
         );
       }
     }
@@ -180,7 +180,7 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
     }
 
     const columnTasks = tasksByStatus[targetStatus].filter(
-      (t) => t.id !== activeTaskId
+      (t) => t.id !== activeTaskId,
     );
 
     let newOrder: typeof tasks;

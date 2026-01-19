@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import {
   format,
   addDays,
@@ -63,12 +59,12 @@ export function CalendarView({
 
   const weekStart = useMemo(
     () => startOfWeek(currentDate, { weekStartsOn: 0 }),
-    [currentDate]
+    [currentDate],
   );
 
   const weekDays = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-    [weekStart]
+    [weekStart],
   );
 
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
@@ -82,7 +78,7 @@ export function CalendarView({
       },
       {
         initialData: initialTimeBlocks,
-      }
+      },
     );
 
   const { data: tasks = initialTasks, refetch: refetchTasks } =
@@ -93,7 +89,7 @@ export function CalendarView({
       },
       {
         initialData: initialTasks,
-      }
+      },
     );
 
   const createTimeBlock = api.timeBlock.create.useMutation({
@@ -131,7 +127,7 @@ export function CalendarView({
   // Get blocks for a specific day
   const getBlocksForDay = (day: Date) => {
     return timeBlocks.filter((block) =>
-      isSameDay(new Date(block.startTime), day)
+      isSameDay(new Date(block.startTime), day),
     );
   };
 
@@ -141,7 +137,7 @@ export function CalendarView({
       (task) =>
         task.scheduledStart &&
         isSameDay(new Date(task.scheduledStart), day) &&
-        !timeBlocks.some((block) => block.taskId === task.id)
+        !timeBlocks.some((block) => block.taskId === task.id),
     );
   };
 
@@ -151,7 +147,7 @@ export function CalendarView({
       (task) =>
         !task.scheduledStart &&
         task.status !== "completed" &&
-        task.status !== "cancelled"
+        task.status !== "cancelled",
     );
   }, [tasks]);
 
@@ -162,7 +158,8 @@ export function CalendarView({
         <div>
           <h1 className="text-3xl font-bold">Calendar</h1>
           <p className="text-muted-foreground">
-            {format(weekStart, "MMMM d")} - {format(addDays(weekStart, 6), "MMMM d, yyyy")}
+            {format(weekStart, "MMMM d")} -{" "}
+            {format(addDays(weekStart, 6), "MMMM d, yyyy")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -184,24 +181,24 @@ export function CalendarView({
           <ScrollArea className="h-full">
             <div className="min-w-[800px]">
               {/* Day headers */}
-              <div className="sticky top-0 z-10 grid grid-cols-[60px_repeat(7,1fr)] border-b bg-background">
+              <div className="bg-background sticky top-0 z-10 grid grid-cols-[60px_repeat(7,1fr)] border-b">
                 <div className="p-2" /> {/* Time column header */}
                 {weekDays.map((day) => (
                   <div
                     key={day.toISOString()}
                     className={cn(
                       "border-l p-2 text-center",
-                      isToday(day) && "bg-primary/5"
+                      isToday(day) && "bg-primary/5",
                     )}
                   >
-                    <div className="text-xs font-medium text-muted-foreground">
+                    <div className="text-muted-foreground text-xs font-medium">
                       {format(day, "EEE")}
                     </div>
                     <div
                       className={cn(
                         "text-lg font-semibold",
                         isToday(day) &&
-                          "flex h-8 w-8 mx-auto items-center justify-center rounded-full bg-primary text-primary-foreground"
+                          "bg-primary text-primary-foreground mx-auto flex h-8 w-8 items-center justify-center rounded-full",
                       )}
                     >
                       {format(day, "d")}
@@ -217,10 +214,13 @@ export function CalendarView({
                   {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
                     <div
                       key={i}
-                      className="absolute right-2 -translate-y-1/2 text-xs text-muted-foreground"
+                      className="text-muted-foreground absolute right-2 -translate-y-1/2 text-xs"
                       style={{ top: i * HOUR_HEIGHT }}
                     >
-                      {format(setHours(setMinutes(new Date(), 0), START_HOUR + i), "h a")}
+                      {format(
+                        setHours(setMinutes(new Date(), 0), START_HOUR + i),
+                        "h a",
+                      )}
                     </div>
                   ))}
                 </div>
@@ -231,7 +231,7 @@ export function CalendarView({
                     key={day.toISOString()}
                     className={cn(
                       "relative border-l",
-                      isToday(day) && "bg-primary/5"
+                      isToday(day) && "bg-primary/5",
                     )}
                     style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
                   >
@@ -239,7 +239,7 @@ export function CalendarView({
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div
                         key={i}
-                        className="absolute inset-x-0 border-b border-dashed border-muted cursor-pointer hover:bg-muted/50 transition-colors"
+                        className="border-muted hover:bg-muted/50 absolute inset-x-0 cursor-pointer border-b border-dashed transition-colors"
                         style={{
                           top: i * HOUR_HEIGHT,
                           height: HOUR_HEIGHT,
@@ -257,7 +257,7 @@ export function CalendarView({
                         blockStart.getMinutes();
                       const durationMinutes = differenceInMinutes(
                         blockEnd,
-                        blockStart
+                        blockStart,
                       );
                       const top = (startMinutes / 60) * HOUR_HEIGHT;
                       const height = (durationMinutes / 60) * HOUR_HEIGHT;
@@ -266,8 +266,8 @@ export function CalendarView({
                         <div
                           key={block.id}
                           className={cn(
-                            "absolute inset-x-1 rounded-md p-1 text-xs overflow-hidden cursor-pointer transition-opacity hover:opacity-90",
-                            block.isCompleted && "opacity-60"
+                            "absolute inset-x-1 cursor-pointer overflow-hidden rounded-md p-1 text-xs transition-opacity hover:opacity-90",
+                            block.isCompleted && "opacity-60",
                           )}
                           style={{
                             top: Math.max(0, top),
@@ -278,11 +278,11 @@ export function CalendarView({
                             // Could open edit dialog here
                           }}
                         >
-                          <div className="font-medium text-white truncate">
+                          <div className="truncate font-medium text-white">
                             {block.title}
                           </div>
                           {height > 30 && (
-                            <div className="text-white/80 truncate">
+                            <div className="truncate text-white/80">
                               {format(blockStart, "h:mm a")} -{" "}
                               {format(blockEnd, "h:mm a")}
                             </div>
@@ -299,14 +299,14 @@ export function CalendarView({
                         ? new Date(task.scheduledEnd)
                         : new Date(
                             taskStart.getTime() +
-                              (task.estimatedMinutes ?? 60) * 60 * 1000
+                              (task.estimatedMinutes ?? 60) * 60 * 1000,
                           );
                       const startMinutes =
                         (taskStart.getHours() - START_HOUR) * 60 +
                         taskStart.getMinutes();
                       const durationMinutes = differenceInMinutes(
                         taskEnd,
-                        taskStart
+                        taskStart,
                       );
                       const top = (startMinutes / 60) * HOUR_HEIGHT;
                       const height = (durationMinutes / 60) * HOUR_HEIGHT;
@@ -321,7 +321,7 @@ export function CalendarView({
                       return (
                         <div
                           key={task.id}
-                          className="absolute inset-x-1 rounded-md border-l-4 bg-card p-1 text-xs overflow-hidden shadow-sm"
+                          className="bg-card absolute inset-x-1 overflow-hidden rounded-md border-l-4 p-1 text-xs shadow-sm"
                           style={{
                             top: Math.max(0, top),
                             height: Math.max(20, height),
@@ -329,7 +329,7 @@ export function CalendarView({
                               priorityColors[task.priority] ?? "#3b82f6",
                           }}
                         >
-                          <div className="font-medium truncate">
+                          <div className="truncate font-medium">
                             {task.title}
                           </div>
                           {height > 30 && (
@@ -361,7 +361,7 @@ export function CalendarView({
           <CardContent className="flex-1 overflow-hidden">
             <ScrollArea className="h-full">
               {unscheduledTasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   All tasks are scheduled!
                 </p>
               ) : (
@@ -369,33 +369,37 @@ export function CalendarView({
                   {unscheduledTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="rounded-lg border p-2 text-sm cursor-grab hover:bg-muted/50 transition-colors"
+                      className="hover:bg-muted/50 cursor-grab rounded-lg border p-2 text-sm transition-colors"
                       draggable
                       onDragStart={(e) => {
                         e.dataTransfer.setData("taskId", task.id);
                         e.dataTransfer.setData("taskTitle", task.title);
                         e.dataTransfer.setData(
                           "estimatedMinutes",
-                          String(task.estimatedMinutes ?? 60)
+                          String(task.estimatedMinutes ?? 60),
                         );
                       }}
                     >
                       <div className="font-medium">{task.title}</div>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="mt-1 flex items-center gap-2">
                         <Badge
                           variant="outline"
                           className={cn(
                             "text-xs",
-                            task.priority === "urgent" && "border-red-500 text-red-500",
-                            task.priority === "high" && "border-orange-500 text-orange-500",
-                            task.priority === "medium" && "border-yellow-500 text-yellow-500",
-                            task.priority === "low" && "border-blue-500 text-blue-500"
+                            task.priority === "urgent" &&
+                              "border-red-500 text-red-500",
+                            task.priority === "high" &&
+                              "border-orange-500 text-orange-500",
+                            task.priority === "medium" &&
+                              "border-yellow-500 text-yellow-500",
+                            task.priority === "low" &&
+                              "border-blue-500 text-blue-500",
                           )}
                         >
                           {task.priority}
                         </Badge>
                         {task.dueDate && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             Due {format(new Date(task.dueDate), "MMM d")}
                           </span>
                         )}
@@ -438,11 +442,8 @@ function CurrentTimeIndicator() {
   }
 
   return (
-    <div
-      className="absolute inset-x-0 z-20 flex items-center"
-      style={{ top }}
-    >
-      <div className="h-3 w-3 -ml-1.5 rounded-full bg-red-500" />
+    <div className="absolute inset-x-0 z-20 flex items-center" style={{ top }}>
+      <div className="-ml-1.5 h-3 w-3 rounded-full bg-red-500" />
       <div className="flex-1 border-t-2 border-red-500" />
     </div>
   );
@@ -472,10 +473,10 @@ function CreateTimeBlockForm({
 
   const [title, setTitle] = useState("");
   const [startTime, setStartTime] = useState(
-    format(defaultStartTime, "yyyy-MM-dd'T'HH:mm")
+    format(defaultStartTime, "yyyy-MM-dd'T'HH:mm"),
   );
   const [endTime, setEndTime] = useState(
-    format(defaultEndTime, "yyyy-MM-dd'T'HH:mm")
+    format(defaultEndTime, "yyyy-MM-dd'T'HH:mm"),
   );
   const [color, setColor] = useState("#3b82f6");
   const [notes, setNotes] = useState("");
@@ -530,20 +531,27 @@ function CreateTimeBlockForm({
       <div className="space-y-2">
         <Label htmlFor="color">Color</Label>
         <div className="flex gap-2">
-          {["#3b82f6", "#ef4444", "#22c55e", "#f97316", "#8b5cf6", "#ec4899"].map(
-            (c) => (
-              <button
-                key={c}
-                type="button"
-                className={cn(
-                  "h-8 w-8 rounded-full border-2 transition-all",
-                  color === c ? "border-foreground scale-110" : "border-transparent"
-                )}
-                style={{ backgroundColor: c }}
-                onClick={() => setColor(c)}
-              />
-            )
-          )}
+          {[
+            "#3b82f6",
+            "#ef4444",
+            "#22c55e",
+            "#f97316",
+            "#8b5cf6",
+            "#ec4899",
+          ].map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={cn(
+                "h-8 w-8 rounded-full border-2 transition-all",
+                color === c
+                  ? "border-foreground scale-110"
+                  : "border-transparent",
+              )}
+              style={{ backgroundColor: c }}
+              onClick={() => setColor(c)}
+            />
+          ))}
         </div>
       </div>
 

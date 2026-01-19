@@ -4,7 +4,13 @@ import { useState } from "react";
 import { Save, Loader2, Sun, Moon, Monitor } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -55,7 +61,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
 
   const updateField = <K extends keyof UserPreferences>(
     field: K,
-    value: UserPreferences[K]
+    value: UserPreferences[K],
   ) => {
     setPreferences((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
@@ -86,7 +92,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
     });
   };
 
-  const workingDays = (preferences.workingDays as number[] | null) ?? [1, 2, 3, 4, 5];
+  const workingDays = (preferences.workingDays as number[] | null) ?? [
+    1, 2, 3, 4, 5,
+  ];
 
   return (
     <div className="space-y-6">
@@ -118,7 +126,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                   ].map(({ value, label, icon: Icon }) => (
                     <Button
                       key={value}
-                      variant={preferences.theme === value ? "default" : "outline"}
+                      variant={
+                        preferences.theme === value ? "default" : "outline"
+                      }
                       className="flex-1"
                       onClick={() => updateField("theme", value)}
                     >
@@ -172,7 +182,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                 <Label htmlFor="weekStartsOn">Week Starts On</Label>
                 <Select
                   value={String(preferences.weekStartsOn ?? 0)}
-                  onValueChange={(v) => updateField("weekStartsOn", parseInt(v))}
+                  onValueChange={(v) =>
+                    updateField("weekStartsOn", parseInt(v))
+                  }
                 >
                   <SelectTrigger id="weekStartsOn" className="w-[200px]">
                     <SelectValue />
@@ -283,7 +295,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                   {DAYS_OF_WEEK.map((day) => (
                     <Button
                       key={day.value}
-                      variant={workingDays.includes(day.value) ? "default" : "outline"}
+                      variant={
+                        workingDays.includes(day.value) ? "default" : "outline"
+                      }
                       size="sm"
                       className="flex-1"
                       onClick={() => {
@@ -307,7 +321,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                     id="workingHoursStart"
                     type="time"
                     value={preferences.workingHoursStart ?? "09:00"}
-                    onChange={(e) => updateField("workingHoursStart", e.target.value)}
+                    onChange={(e) =>
+                      updateField("workingHoursStart", e.target.value)
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -316,14 +332,18 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                     id="workingHoursEnd"
                     type="time"
                     value={preferences.workingHoursEnd ?? "17:00"}
-                    onChange={(e) => updateField("workingHoursEnd", e.target.value)}
+                    onChange={(e) =>
+                      updateField("workingHoursEnd", e.target.value)
+                    }
                   />
                 </div>
               </div>
 
               {/* Max Daily Hours */}
               <div className="space-y-2">
-                <Label htmlFor="maxDailyWorkHours">Maximum Daily Work Hours</Label>
+                <Label htmlFor="maxDailyWorkHours">
+                  Maximum Daily Work Hours
+                </Label>
                 <Select
                   value={preferences.maxDailyWorkHours ?? "8.0"}
                   onValueChange={(v) => updateField("maxDailyWorkHours", v)}
@@ -358,9 +378,14 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                 </Label>
                 <Select
                   value={String(preferences.bufferTimeBetweenTasks ?? 15)}
-                  onValueChange={(v) => updateField("bufferTimeBetweenTasks", parseInt(v))}
+                  onValueChange={(v) =>
+                    updateField("bufferTimeBetweenTasks", parseInt(v))
+                  }
                 >
-                  <SelectTrigger id="bufferTimeBetweenTasks" className="w-[200px]">
+                  <SelectTrigger
+                    id="bufferTimeBetweenTasks"
+                    className="w-[200px]"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -371,7 +396,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Time added between scheduled tasks for breaks or transitions.
                 </p>
               </div>
@@ -382,7 +407,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                   <Label htmlFor="minTaskChunkSize">Minimum Task Block</Label>
                   <Select
                     value={String(preferences.minTaskChunkSize ?? 30)}
-                    onValueChange={(v) => updateField("minTaskChunkSize", parseInt(v))}
+                    onValueChange={(v) =>
+                      updateField("minTaskChunkSize", parseInt(v))
+                    }
                   >
                     <SelectTrigger id="minTaskChunkSize">
                       <SelectValue />
@@ -400,7 +427,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                   <Label htmlFor="maxTaskChunkSize">Maximum Task Block</Label>
                   <Select
                     value={String(preferences.maxTaskChunkSize ?? 120)}
-                    onValueChange={(v) => updateField("maxTaskChunkSize", parseInt(v))}
+                    onValueChange={(v) =>
+                      updateField("maxTaskChunkSize", parseInt(v))
+                    }
                   >
                     <SelectTrigger id="maxTaskChunkSize">
                       <SelectValue />
@@ -408,7 +437,9 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                     <SelectContent>
                       {[60, 90, 120, 150, 180, 240].map((m) => (
                         <SelectItem key={m} value={String(m)}>
-                          {m >= 60 ? `${m / 60}h ${m % 60 ? `${m % 60}m` : ""}`.trim() : `${m}m`}
+                          {m >= 60
+                            ? `${m / 60}h ${m % 60 ? `${m % 60}m` : ""}`.trim()
+                            : `${m}m`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -423,32 +454,47 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                 </Label>
                 <Select
                   value={String(preferences.focusTimeMinimumMinutes ?? 90)}
-                  onValueChange={(v) => updateField("focusTimeMinimumMinutes", parseInt(v))}
+                  onValueChange={(v) =>
+                    updateField("focusTimeMinimumMinutes", parseInt(v))
+                  }
                 >
-                  <SelectTrigger id="focusTimeMinimumMinutes" className="w-[200px]">
+                  <SelectTrigger
+                    id="focusTimeMinimumMinutes"
+                    className="w-[200px]"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {[30, 45, 60, 90, 120, 150, 180].map((m) => (
                       <SelectItem key={m} value={String(m)}>
-                        {m >= 60 ? `${Math.floor(m / 60)}h ${m % 60 ? `${m % 60}m` : ""}`.trim() : `${m} minutes`}
+                        {m >= 60
+                          ? `${Math.floor(m / 60)}h ${m % 60 ? `${m % 60}m` : ""}`.trim()
+                          : `${m} minutes`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  The scheduler will try to protect blocks of this size for deep work.
+                <p className="text-muted-foreground text-xs">
+                  The scheduler will try to protect blocks of this size for deep
+                  work.
                 </p>
               </div>
 
               {/* Lookahead Days */}
               <div className="space-y-2">
-                <Label htmlFor="schedulingLookaheadDays">Scheduling Lookahead</Label>
+                <Label htmlFor="schedulingLookaheadDays">
+                  Scheduling Lookahead
+                </Label>
                 <Select
                   value={String(preferences.schedulingLookaheadDays ?? 14)}
-                  onValueChange={(v) => updateField("schedulingLookaheadDays", parseInt(v))}
+                  onValueChange={(v) =>
+                    updateField("schedulingLookaheadDays", parseInt(v))
+                  }
                 >
-                  <SelectTrigger id="schedulingLookaheadDays" className="w-[200px]">
+                  <SelectTrigger
+                    id="schedulingLookaheadDays"
+                    className="w-[200px]"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -459,7 +505,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   How far ahead the AI will look when scheduling tasks.
                 </p>
               </div>
@@ -478,11 +524,12 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border border-dashed p-6 text-center">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Google Calendar integration coming soon.
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Sync your scheduled tasks and time blocks with your Google Calendar.
+                <p className="text-muted-foreground mt-1 text-xs">
+                  Sync your scheduled tasks and time blocks with your Google
+                  Calendar.
                 </p>
               </div>
             </CardContent>
@@ -499,14 +546,19 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium">Auto-Schedule Tasks</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Automatically suggest optimal times for unscheduled tasks.
                   </p>
                 </div>
                 <Button
-                  variant={preferences.autoScheduleEnabled ? "default" : "outline"}
+                  variant={
+                    preferences.autoScheduleEnabled ? "default" : "outline"
+                  }
                   onClick={() =>
-                    updateField("autoScheduleEnabled", !preferences.autoScheduleEnabled)
+                    updateField(
+                      "autoScheduleEnabled",
+                      !preferences.autoScheduleEnabled,
+                    )
                   }
                 >
                   {preferences.autoScheduleEnabled ? "Enabled" : "Disabled"}
@@ -524,7 +576,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
           disabled={!hasChanges || updatePreferences.isPending}
           className={cn(
             "shadow-lg transition-all",
-            hasChanges ? "opacity-100" : "opacity-0"
+            hasChanges ? "opacity-100" : "opacity-0",
           )}
         >
           {updatePreferences.isPending ? (

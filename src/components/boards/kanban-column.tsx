@@ -46,15 +46,15 @@ export function KanbanColumn({ id, title, tasks, boardId }: KanbanColumnProps) {
       <div
         ref={setNodeRef}
         className={cn(
-          "flex w-80 flex-shrink-0 flex-col rounded-lg bg-muted/50",
-          isOver && "ring-2 ring-primary ring-offset-2"
+          "bg-muted/50 flex w-80 flex-shrink-0 flex-col rounded-lg",
+          isOver && "ring-primary ring-2 ring-offset-2",
         )}
       >
         {/* Column Header */}
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold">{title}</h3>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs font-medium">
+            <span className="bg-muted flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
               {taskCount}
             </span>
           </div>
@@ -79,8 +79,8 @@ export function KanbanColumn({ id, title, tasks, boardId }: KanbanColumnProps) {
                 <SortableTaskCard key={task.id} task={task} />
               ))}
               {tasks.length === 0 && (
-                <div className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20">
-                  <p className="text-sm text-muted-foreground">No tasks</p>
+                <div className="border-muted-foreground/20 flex h-24 items-center justify-center rounded-lg border-2 border-dashed">
+                  <p className="text-muted-foreground text-sm">No tasks</p>
                 </div>
               )}
             </div>
