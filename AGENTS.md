@@ -1,5 +1,32 @@
 # Agent Guidelines for Dayflow Codebase
 
+## Git Workflow
+
+**IMPORTANT**: Make encapsulated git commits after completing each logical task or todo item.
+
+- Commit early and often - one commit per completed task/feature
+- Use conventional commit format: `type: description`
+  - `feat:` - new feature
+  - `fix:` - bug fix
+  - `style:` - styling/CSS changes
+  - `docs:` - documentation
+  - `refactor:` - code refactoring
+  - `chore:` - maintenance tasks
+- Keep commits atomic and focused on a single change
+- Write clear commit messages that explain the "why"
+
+Example workflow:
+
+```bash
+# After completing metadata update
+git add src/app/layout.tsx
+git commit -m "feat: update app metadata with SEO and branding"
+
+# After completing styling changes
+git add src/styles/globals.css
+git commit -m "style: update color scheme to brand colors"
+```
+
 ## Build/Lint/Test Commands
 
 ```bash
