@@ -39,16 +39,18 @@ const END_HOUR = 22; // 10 PM
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 type TimeBlock = RouterOutputs["timeBlock"]["getByDateRange"][number];
-type Task = RouterOutputs["task"]["getByDateRange"][number];
+type Task = RouterOutputs["task"]["getByDateRange"]["scheduled"][number];
 
 interface CalendarViewProps {
   initialTimeBlocks: TimeBlock[];
-  initialTasks: Task[];
+  initialScheduledTasks: Task[];
+  initialUnscheduledTasks: Task[];
 }
 
 export function CalendarView({
   initialTimeBlocks,
-  initialTasks,
+  initialScheduledTasks,
+  initialUnscheduledTasks,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -81,16 +83,25 @@ export function CalendarView({
       },
     );
 
-  const { data: tasks = initialTasks, refetch: refetchTasks } =
-    api.task.getByDateRange.useQuery(
-      {
-        startDate: weekStart.toISOString(),
-        endDate: weekEnd.toISOString(),
+  const {
+    data: tasksData = {
+      scheduled: initialScheduledTasks,
+      unscheduled: initialUnscheduledTasks,
+    },
+    refetch: refetchTasks,
+  } = api.task.getByDateRange.useQuery(
+    {
+      startDate: weekStart.toISOString(),
+      endDate: weekEnd.toISOString(),
+      includeUnscheduled: true,
+    },
+    {
+      initialData: {
+        scheduled: initialScheduledTasks,
+        unscheduled: initialUnscheduledTasks,
       },
-      {
-        initialData: initialTasks,
-      },
-    );
+    },
+  );
 
   const createTimeBlock = api.timeBlock.create.useMutation({
     onSuccess: () => {
@@ -135,8 +146,8 @@ export function CalendarView({
 
   // Get scheduled tasks for a specific day (that aren't tied to time blocks)
   const getScheduledTasksForDay = (day: Date) => {
-    return tasks.filter(
-      (task) =>
+    return tasksData.scheduled.filter(
+      (task: Task) =>
         task.scheduledStart &&
         isSameDay(new Date(task.scheduledStart), day) &&
         !timeBlocks.some((block) => block.taskId === task.id),
@@ -145,13 +156,11 @@ export function CalendarView({
 
   // Get unscheduled tasks with due dates
   const unscheduledTasks = useMemo(() => {
-    return tasks.filter(
-      (task) =>
-        !task.scheduledStart &&
-        task.status !== "completed" &&
-        task.status !== "cancelled",
+    return tasksData.unscheduled.filter(
+      (task: Task) =>
+        task.status !== "completed" && task.status !== "cancelled",
     );
-  }, [tasks]);
+  }, [tasksData.unscheduled]);
 
   return (
     <div className="flex h-full flex-col gap-4">

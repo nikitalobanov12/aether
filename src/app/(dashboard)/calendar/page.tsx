@@ -26,7 +26,11 @@ export default async function CalendarPage() {
 
   return (
     <HydrateClient>
-      <CalendarView initialTimeBlocks={timeBlocks} initialTasks={tasks} />
+      <CalendarView
+        initialTimeBlocks={timeBlocks}
+        initialScheduledTasks={tasks.scheduled}
+        initialUnscheduledTasks={tasks.unscheduled}
+      />
     </HydrateClient>
   );
 }

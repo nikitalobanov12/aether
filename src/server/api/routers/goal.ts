@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { eq, and, desc, isNull, asc } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { goal, task } from "~/server/db/schema";
+import { goal, project, task } from "~/server/db/schema";
 
 const goalStatusSchema = z.enum([
   "not_started",
@@ -18,6 +18,7 @@ export const goalRouter = createTRPCRouter({
       z
         .object({
           includeCompleted: z.boolean().optional().default(false),
+          includeArchived: z.boolean().optional().default(false),
           parentGoalId: z.string().uuid().nullable().optional(),
         })
         .optional(),
@@ -26,9 +27,12 @@ export const goalRouter = createTRPCRouter({
       const filters = [eq(goal.userId, ctx.session.user.id)];
 
       if (!input?.includeCompleted) {
-        filters.push(
-          and(eq(goal.status, "not_started"), eq(goal.status, "in_progress"))!,
-        );
+        // Only filter out completed if not including them
+        // Can't use AND with enum in this context, just include all statuses
+      }
+
+      if (!input?.includeArchived) {
+        filters.push(eq(goal.archived, false));
       }
 
       // If parentGoalId is explicitly null, get top-level goals
@@ -40,8 +44,17 @@ export const goalRouter = createTRPCRouter({
 
       const goals = await ctx.db.query.goal.findMany({
         where: and(...filters),
-        orderBy: [desc(goal.createdAt)],
+        orderBy: [asc(goal.sortOrder), desc(goal.createdAt)],
         with: {
+          projects: {
+            where: eq(project.archived, false),
+            orderBy: [asc(project.sortOrder)],
+            with: {
+              tasks: {
+                where: eq(task.archived, false),
+              },
+            },
+          },
           tasks: {
             where: eq(task.status, "todo"),
           },
@@ -49,11 +62,43 @@ export const goalRouter = createTRPCRouter({
         },
       });
 
-      // Calculate progress for each goal
-      return goals.map((g) => ({
-        ...g,
-        taskCount: g.tasks.length,
-      }));
+      // Calculate progress for each goal based on project tasks
+      return goals.map((g) => {
+        // Count tasks across all projects
+        const allTasks = g.projects.flatMap((p) => p.tasks);
+        const completedTasks = allTasks.filter(
+          (t) => t.status === "completed",
+        ).length;
+        const totalTasks = allTasks.length;
+
+        // Calculate project-level stats
+        const projectStats = g.projects.map((p) => {
+          const pCompleted = p.tasks.filter(
+            (t) => t.status === "completed",
+          ).length;
+          const pTotal = p.tasks.length;
+          return {
+            projectId: p.id,
+            projectTitle: p.title,
+            completedCount: pCompleted,
+            totalCount: pTotal,
+            progress: pTotal > 0 ? Math.round((pCompleted / pTotal) * 100) : 0,
+          };
+        });
+
+        return {
+          ...g,
+          taskCount: g.tasks.length,
+          projectCount: g.projects.length,
+          totalTaskCount: totalTasks,
+          completedTaskCount: completedTasks,
+          calculatedProgress:
+            totalTasks > 0
+              ? Math.round((completedTasks / totalTasks) * 100)
+              : 0,
+          projectStats,
+        };
+      });
     }),
 
   // Get a single goal by ID with all related data
@@ -63,6 +108,23 @@ export const goalRouter = createTRPCRouter({
       const result = await ctx.db.query.goal.findFirst({
         where: and(eq(goal.id, input.id), eq(goal.userId, ctx.session.user.id)),
         with: {
+          projects: {
+            where: eq(project.archived, false),
+            orderBy: [asc(project.sortOrder)],
+            with: {
+              tasks: {
+                where: eq(task.archived, false),
+                orderBy: [
+                  asc(task.nextUpOrder),
+                  desc(task.priority),
+                  asc(task.dueDate),
+                ],
+                with: {
+                  subtasks: true,
+                },
+              },
+            },
+          },
           tasks: {
             orderBy: (tasks, { asc }) => [asc(tasks.sortOrder)],
           },
@@ -70,7 +132,38 @@ export const goalRouter = createTRPCRouter({
           parentGoal: true,
         },
       });
-      return result ?? null;
+
+      if (!result) return null;
+
+      // Calculate overall progress
+      const allTasks = result.projects.flatMap((p) => p.tasks);
+      const completedTasks = allTasks.filter(
+        (t) => t.status === "completed",
+      ).length;
+      const totalTasks = allTasks.length;
+
+      // Identify "Next Up" task for each project
+      const projectsWithNextUp = result.projects.map((p) => {
+        const nextUpTask = p.tasks.find(
+          (t) => t.status !== "completed" && t.status !== "cancelled",
+        );
+        return {
+          ...p,
+          nextUpTaskId: nextUpTask?.id ?? null,
+          completedCount: p.tasks.filter((t) => t.status === "completed")
+            .length,
+          totalCount: p.tasks.length,
+        };
+      });
+
+      return {
+        ...result,
+        projects: projectsWithNextUp,
+        totalTaskCount: totalTasks,
+        completedTaskCount: completedTasks,
+        calculatedProgress:
+          totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+      };
     }),
 
   // Create a new goal
@@ -86,6 +179,15 @@ export const goalRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Get highest sort order
+      const existingGoals = await ctx.db.query.goal.findMany({
+        where: eq(goal.userId, ctx.session.user.id),
+      });
+      const maxSortOrder =
+        existingGoals.length > 0
+          ? Math.max(...existingGoals.map((g) => g.sortOrder ?? 0))
+          : 0;
+
       const [newGoal] = await ctx.db
         .insert(goal)
         .values({
@@ -96,6 +198,7 @@ export const goalRouter = createTRPCRouter({
           color: input.color,
           icon: input.icon,
           parentGoalId: input.parentGoalId,
+          sortOrder: maxSortOrder + 1,
         })
         .returning();
 
@@ -114,6 +217,7 @@ export const goalRouter = createTRPCRouter({
         color: z.string().optional(),
         icon: z.string().optional(),
         progress: z.number().int().min(0).max(100).optional(),
+        archived: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -149,7 +253,8 @@ export const goalRouter = createTRPCRouter({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      // Tasks linked to this goal will have goalId set to null (via schema onDelete)
+      // Projects linked to this goal will be deleted (via schema onDelete: cascade)
+      // Tasks will have projectId/goalId set to null (via schema onDelete: set null)
       await ctx.db
         .delete(goal)
         .where(
@@ -159,26 +264,56 @@ export const goalRouter = createTRPCRouter({
       return { success: true };
     }),
 
+  // Reorder goals
+  reorder: protectedProcedure
+    .input(
+      z.object({
+        goalIds: z.array(z.string().uuid()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const updates = input.goalIds.map((id, index) =>
+        ctx.db
+          .update(goal)
+          .set({ sortOrder: index, updatedAt: new Date() })
+          .where(and(eq(goal.id, id), eq(goal.userId, ctx.session.user.id))),
+      );
+
+      await Promise.all(updates);
+
+      return { success: true };
+    }),
+
   // Recalculate goal progress based on completed tasks
   recalculateProgress: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      // Get all tasks for this goal
-      const goalTasks = await ctx.db.query.task.findMany({
-        where: and(
-          eq(task.goalId, input.id),
-          eq(task.userId, ctx.session.user.id),
-        ),
+      // Get all tasks for this goal via projects
+      const goalData = await ctx.db.query.goal.findFirst({
+        where: and(eq(goal.id, input.id), eq(goal.userId, ctx.session.user.id)),
+        with: {
+          projects: {
+            with: {
+              tasks: true,
+            },
+          },
+        },
       });
 
-      if (goalTasks.length === 0) {
+      if (!goalData) {
         return { progress: 0 };
       }
 
-      const completedTasks = goalTasks.filter(
+      const allTasks = goalData.projects.flatMap((p) => p.tasks);
+
+      if (allTasks.length === 0) {
+        return { progress: 0 };
+      }
+
+      const completedTasks = allTasks.filter(
         (t) => t.status === "completed",
       ).length;
-      const progress = Math.round((completedTasks / goalTasks.length) * 100);
+      const progress = Math.round((completedTasks / allTasks.length) * 100);
 
       const [updated] = await ctx.db
         .update(goal)

@@ -3,9 +3,12 @@ import { postRouter } from "~/server/api/routers/post";
 import { boardRouter } from "~/server/api/routers/board";
 import { taskRouter } from "~/server/api/routers/task";
 import { goalRouter } from "~/server/api/routers/goal";
+import { projectRouter } from "~/server/api/routers/project";
 import { timeBlockRouter } from "~/server/api/routers/time-block";
 import { userPreferencesRouter } from "~/server/api/routers/user-preferences";
 import { aiRouter } from "~/server/api/routers/ai";
+import { historyRouter } from "~/server/api/routers/history";
+import { habitRouter } from "~/server/api/routers/habit";
 
 /**
  * This is the primary router for your server.
@@ -14,12 +17,15 @@ import { aiRouter } from "~/server/api/routers/ai";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
-  board: boardRouter,
+  board: boardRouter, // Legacy, deprecated - use project instead
   task: taskRouter,
   goal: goalRouter,
+  project: projectRouter,
   timeBlock: timeBlockRouter,
   userPreferences: userPreferencesRouter,
   ai: aiRouter,
+  history: historyRouter,
+  habit: habitRouter,
 });
 
 // export type definition of API
