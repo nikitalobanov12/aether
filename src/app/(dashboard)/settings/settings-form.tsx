@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/react";
+import { GoogleCalendarSettings } from "~/components/settings/google-calendar-settings";
 
 type UserPreferences = NonNullable<RouterOutputs["userPreferences"]["get"]>;
 
@@ -516,25 +517,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
 
         {/* Integrations */}
         <TabsContent value="integrations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Google Calendar</CardTitle>
-              <CardDescription>
-                Sync your tasks with Google Calendar.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg border border-dashed p-6 text-center">
-                <p className="text-muted-foreground text-sm">
-                  Google Calendar integration coming soon.
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Sync your scheduled tasks and time blocks with your Google
-                  Calendar.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <GoogleCalendarSettings />
 
           <Card>
             <CardHeader>

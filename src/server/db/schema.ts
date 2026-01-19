@@ -52,7 +52,12 @@ export const syncStatusEnum = pgEnum("sync_status", [
   "failed",
 ]);
 
-export const syncTypeEnum = pgEnum("sync_type", ["calendar", "tasks"]);
+export const syncTypeEnum = pgEnum("sync_type", [
+  "calendar",
+  "tasks",
+  "task_to_google",
+  "event_to_app",
+]);
 
 // ============================================================================
 // AUTH TABLES (Better Auth)
@@ -283,6 +288,8 @@ export const timeBlock = pgTable(
     color: text("color"),
     isCompleted: boolean("is_completed").default(false),
     notes: text("notes"),
+    // Google Calendar integration
+    googleCalendarEventId: text("google_calendar_event_id"),
     createdAt: timestamp("created_at")
       .$defaultFn(() => new Date())
       .notNull(),
@@ -294,6 +301,7 @@ export const timeBlock = pgTable(
     index("time_block_user_id_idx").on(t.userId),
     index("time_block_task_id_idx").on(t.taskId),
     index("time_block_time_idx").on(t.startTime, t.endTime),
+    index("time_block_google_event_idx").on(t.googleCalendarEventId),
   ],
 );
 

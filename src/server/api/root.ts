@@ -9,6 +9,7 @@ import { userPreferencesRouter } from "~/server/api/routers/user-preferences";
 import { aiRouter } from "~/server/api/routers/ai";
 import { historyRouter } from "~/server/api/routers/history";
 import { habitRouter } from "~/server/api/routers/habit";
+import { googleCalendarRouter } from "~/server/api/routers/google-calendar";
 
 /**
  * This is the primary router for your server.
@@ -26,6 +27,7 @@ export const appRouter = createTRPCRouter({
   ai: aiRouter,
   history: historyRouter,
   habit: habitRouter,
+  googleCalendar: googleCalendarRouter,
 });
 
 // export type definition of API

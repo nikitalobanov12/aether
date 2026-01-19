@@ -23,6 +23,7 @@ import {
   MoreHorizontal,
   Calendar,
   Sun,
+  ExternalLink,
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -51,6 +52,16 @@ const TEAL_ACCENT = "#32B8C6";
 
 type TodayTask = RouterOutputs["task"]["getToday"][number];
 type TimeBlock = RouterOutputs["timeBlock"]["getByDateRange"][number];
+type GoogleCalendarEvent = {
+  id: string;
+  title: string;
+  description: string | null;
+  startTime: string;
+  endTime: string;
+  allDay: boolean;
+  location: string | null;
+  htmlLink: string | null;
+};
 
 interface DailyPlannerProps {
   initialTasks: TodayTask[];
@@ -102,6 +113,23 @@ export function DailyPlanner({
         initialData: initialTimeBlocks,
       },
     );
+
+  // Fetch Google Calendar events
+  const { data: googleCalendarStatus } =
+    api.googleCalendar.getStatus.useQuery();
+  const { data: googleEventsData } = api.googleCalendar.getEvents.useQuery(
+    {
+      startDate: dayStart.toISOString(),
+      endDate: dayEnd.toISOString(),
+    },
+    {
+      enabled:
+        googleCalendarStatus?.connected &&
+        googleCalendarStatus?.calendarEnabled,
+    },
+  );
+
+  const googleEvents: GoogleCalendarEvent[] = googleEventsData?.events ?? [];
 
   // Fetch completed count for today
   const { data: historyData } = api.history.getToday.useQuery(undefined, {
@@ -244,6 +272,35 @@ export function DailyPlanner({
         </div>
       </div>
 
+      {/* All-day Google Calendar events */}
+      {googleEvents.filter((e) => e.allDay).length > 0 && (
+        <div className="flex items-center gap-2 border-b bg-purple-50 px-6 py-2 dark:bg-purple-950/20">
+          <Calendar className="h-4 w-4 text-purple-500" />
+          <div className="flex flex-wrap gap-2">
+            {googleEvents
+              .filter((e) => e.allDay)
+              .map((event) => (
+                <div
+                  key={`allday-${event.id}`}
+                  className="flex items-center gap-1 rounded-full border border-purple-300/50 bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-300"
+                >
+                  <span>{event.title}</span>
+                  {event.htmlLink && (
+                    <a
+                      href={event.htmlLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-purple-500 hover:text-purple-700"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Main content - Split view */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Calendar/Time blocks (40%) */}
@@ -328,6 +385,65 @@ export function DailyPlanner({
                   </div>
                 );
               })}
+
+              {/* Google Calendar events */}
+              {googleEvents
+                .filter((event) => !event.allDay)
+                .map((event) => {
+                  const eventStart = new Date(event.startTime);
+                  const eventEnd = new Date(event.endTime);
+                  if (!isSameDay(eventStart, selectedDate)) return null;
+
+                  const startMinutes =
+                    (eventStart.getHours() - START_HOUR) * 60 +
+                    eventStart.getMinutes();
+                  const durationMinutes = differenceInMinutes(
+                    eventEnd,
+                    eventStart,
+                  );
+                  const top = (startMinutes / 60) * HOUR_HEIGHT;
+                  const height = (durationMinutes / 60) * HOUR_HEIGHT;
+
+                  return (
+                    <div
+                      key={`google-${event.id}`}
+                      className="absolute right-2 left-18 overflow-hidden rounded-md border border-dashed border-purple-400/50 bg-purple-500/10 p-2 text-sm"
+                      style={{
+                        top: Math.max(0, top),
+                        height: Math.max(24, height),
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium text-purple-700 dark:text-purple-300">
+                            {event.title}
+                          </div>
+                          {height > 36 && (
+                            <div className="truncate text-xs text-purple-600/70 dark:text-purple-400/70">
+                              {format(eventStart, "h:mm a")} -{" "}
+                              {format(eventEnd, "h:mm a")}
+                            </div>
+                          )}
+                          {height > 54 && event.location && (
+                            <div className="mt-0.5 truncate text-xs text-purple-600/50 dark:text-purple-400/50">
+                              {event.location}
+                            </div>
+                          )}
+                        </div>
+                        {event.htmlLink && (
+                          <a
+                            href={event.htmlLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-purple-500 opacity-50 transition-opacity hover:opacity-100"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
 
               {/* Scheduled tasks */}
               {scheduledTasks.map((task) => {
