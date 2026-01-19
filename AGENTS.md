@@ -17,14 +17,63 @@ bun run format:check     # Check Prettier formatting
 bun run format:write     # Auto-format all files
 bun run check            # Run lint + typecheck together
 
-# Database
-bun run db:push          # Push schema changes to database
-bun run db:generate      # Generate migration files
-bun run db:migrate       # Run migrations
+# Database (see "Database Migrations" section below)
+bun run db:generate      # Generate migration files from schema changes
+bun run db:migrate       # Run pending migrations (PRODUCTION)
+bun run db:push          # Push schema directly (LOCAL DEV ONLY)
 bun run db:studio        # Open Drizzle Studio GUI
 bun run db:start         # Start Docker PostgreSQL container
 bun run db:stop          # Stop Docker PostgreSQL container
 ```
+
+## Database Migrations
+
+**IMPORTANT**: Always use migrations for production. Never use `db:push` on production databases.
+
+### Workflow for Schema Changes
+
+1. **Modify schema** in `src/server/db/schema.ts`
+2. **Generate migration**: `bun run db:generate`
+3. **Review migration** in `drizzle/` folder (check the SQL is correct)
+4. **Test locally**: `bun run db:migrate` (with local DATABASE_URL)
+5. **Commit migration files** along with schema changes
+6. **Deploy**: Run `bun run db:migrate` on production
+
+### Migration Commands
+
+```bash
+# Generate new migration from schema diff
+bun run db:generate
+
+# Apply pending migrations to database
+bun run db:migrate
+
+# View migration status
+bunx drizzle-kit status
+
+# Drop all tables and re-run migrations (DANGEROUS - dev only)
+bunx drizzle-kit drop
+```
+
+### Local Development
+
+For rapid iteration during local development, you can use `db:push` which directly syncs schema without creating migration files. However, always use migrations before committing:
+
+```bash
+# Quick local sync (no migration file)
+bun run db:push
+
+# Before committing, generate proper migration
+bun run db:generate
+```
+
+### Migration Files
+
+Migrations are stored in `drizzle/` directory:
+
+- `0000_initial_migration.sql` - First migration
+- `0001_add_feature.sql` - Subsequent migrations
+- `meta/` - Drizzle metadata (do not edit manually)
 
 ## Tech Stack
 
