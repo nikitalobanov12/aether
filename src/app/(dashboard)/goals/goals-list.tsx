@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Plus,
   Target,
   MoreHorizontal,
   CheckCircle2,
   Circle,
+  ChevronDown,
+  ChevronRight,
+  FolderKanban,
+  ListTodo,
 } from "lucide-react";
 
+import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import {
@@ -38,31 +44,25 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "~/components/ui/collapsible";
 
-// Simple Progress component since shadcn doesn't include it by default
-function ProgressBar({
-  value,
-  className,
-}: {
-  value: number;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`bg-secondary h-2 w-full overflow-hidden rounded-full ${className}`}
-    >
-      <div
-        className="bg-primary h-full transition-all"
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-      />
-    </div>
-  );
-}
+// Teal accent color
+const TEAL_ACCENT = "#32B8C6";
 
 export function GoalsList() {
-  const [createOpen, setCreateOpen] = useState(false);
+  const [createGoalOpen, setCreateGoalOpen] = useState(false);
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const [newGoalDescription, setNewGoalDescription] = useState("");
+  const [newProjectTitle, setNewProjectTitle] = useState("");
+  const [newProjectDescription, setNewProjectDescription] = useState("");
+  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
 
   const utils = api.useUtils();
 
@@ -73,7 +73,7 @@ export function GoalsList() {
   const createGoal = api.goal.create.useMutation({
     onSuccess: () => {
       void utils.goal.getAll.invalidate();
-      setCreateOpen(false);
+      setCreateGoalOpen(false);
       setNewGoalTitle("");
       setNewGoalDescription("");
     },
@@ -91,6 +91,16 @@ export function GoalsList() {
     },
   });
 
+  const createProject = api.project.create.useMutation({
+    onSuccess: () => {
+      void utils.goal.getAll.invalidate();
+      setCreateProjectOpen(false);
+      setNewProjectTitle("");
+      setNewProjectDescription("");
+      setSelectedGoalId(null);
+    },
+  });
+
   const handleCreateGoal = () => {
     if (!newGoalTitle.trim()) return;
     createGoal.mutate({
@@ -99,11 +109,37 @@ export function GoalsList() {
     });
   };
 
+  const handleCreateProject = () => {
+    if (!newProjectTitle.trim() || !selectedGoalId) return;
+    createProject.mutate({
+      goalId: selectedGoalId,
+      title: newProjectTitle.trim(),
+      description: newProjectDescription.trim() || undefined,
+    });
+  };
+
   const handleToggleComplete = (goal: (typeof goals)[0]) => {
     updateGoal.mutate({
       id: goal.id,
       status: goal.status === "completed" ? "in_progress" : "completed",
     });
+  };
+
+  const toggleGoalExpanded = (goalId: string) => {
+    setExpandedGoals((prev) => {
+      const next = new Set(prev);
+      if (next.has(goalId)) {
+        next.delete(goalId);
+      } else {
+        next.add(goalId);
+      }
+      return next;
+    });
+  };
+
+  const openCreateProject = (goalId: string) => {
+    setSelectedGoalId(goalId);
+    setCreateProjectOpen(true);
   };
 
   if (isLoading) {
@@ -120,7 +156,7 @@ export function GoalsList() {
   return (
     <div className="space-y-6">
       {/* Create Goal Button */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+      <Dialog open={createGoalOpen} onOpenChange={setCreateGoalOpen}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -155,7 +191,7 @@ export function GoalsList() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+            <Button variant="outline" onClick={() => setCreateGoalOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -163,6 +199,54 @@ export function GoalsList() {
               disabled={!newGoalTitle.trim() || createGoal.isPending}
             >
               {createGoal.isPending ? "Creating..." : "Create Goal"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Project Dialog */}
+      <Dialog open={createProjectOpen} onOpenChange={setCreateProjectOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Project</DialogTitle>
+            <DialogDescription>
+              Add a project under this goal to organize your tasks
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="project-title">Project Title</Label>
+              <Input
+                id="project-title"
+                placeholder="e.g., Design, Development, Marketing"
+                value={newProjectTitle}
+                onChange={(e) => setNewProjectTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="project-description">
+                Description (optional)
+              </Label>
+              <Textarea
+                id="project-description"
+                placeholder="What does this project involve?"
+                value={newProjectDescription}
+                onChange={(e) => setNewProjectDescription(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateProjectOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateProject}
+              disabled={!newProjectTitle.trim() || createProject.isPending}
+            >
+              {createProject.isPending ? "Creating..." : "Create Project"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -184,74 +268,17 @@ export function GoalsList() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
             {activeGoals.map((goal) => (
-              <Card key={goal.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 flex-shrink-0"
-                      onClick={() => handleToggleComplete(goal)}
-                    >
-                      <Circle className="text-muted-foreground h-5 w-5" />
-                    </Button>
-                    <div className="flex-1 px-2">
-                      <CardTitle className="text-base">{goal.title}</CardTitle>
-                      {goal.description && (
-                        <CardDescription className="mt-1 line-clamp-2">
-                          {goal.description}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit goal</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => deleteGoal.mutate({ id: goal.id })}
-                        >
-                          Delete goal
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{goal.progress ?? 0}%</span>
-                    </div>
-                    <ProgressBar value={goal.progress ?? 0} />
-                    <div className="flex items-center gap-2 pt-2">
-                      <Badge variant="outline">
-                        {goal.taskCount ?? 0} tasks
-                      </Badge>
-                      <Badge
-                        variant={
-                          goal.status === "in_progress"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {goal.status === "in_progress"
-                          ? "In Progress"
-                          : goal.status === "not_started"
-                            ? "Not Started"
-                            : goal.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                isExpanded={expandedGoals.has(goal.id)}
+                onToggleExpand={() => toggleGoalExpanded(goal.id)}
+                onToggleComplete={() => handleToggleComplete(goal)}
+                onDelete={() => deleteGoal.mutate({ id: goal.id })}
+                onCreateProject={() => openCreateProject(goal.id)}
+              />
             ))}
           </div>
         )}
@@ -263,46 +290,228 @@ export function GoalsList() {
           <h2 className="text-lg font-semibold">
             Completed Goals ({completedGoals.length})
           </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
             {completedGoals.map((goal) => (
-              <Card key={goal.id} className="opacity-60">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 flex-shrink-0"
-                      onClick={() => handleToggleComplete(goal)}
-                    >
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    </Button>
-                    <div className="flex-1 px-2">
-                      <CardTitle className="text-base line-through">
-                        {goal.title}
-                      </CardTitle>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => deleteGoal.mutate({ id: goal.id })}
-                        >
-                          Delete goal
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardHeader>
-              </Card>
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                isExpanded={expandedGoals.has(goal.id)}
+                onToggleExpand={() => toggleGoalExpanded(goal.id)}
+                onToggleComplete={() => handleToggleComplete(goal)}
+                onDelete={() => deleteGoal.mutate({ id: goal.id })}
+                onCreateProject={() => openCreateProject(goal.id)}
+                isCompleted
+              />
             ))}
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+// Goal Card with collapsible projects
+interface GoalCardProps {
+  goal: {
+    id: string;
+    title: string;
+    description: string | null;
+    status: string;
+    projects: Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      color: string | null;
+      tasks: Array<{ id: string; status: string }>;
+    }>;
+    calculatedProgress: number;
+    projectCount: number;
+    totalTaskCount: number;
+    completedTaskCount: number;
+  };
+  isExpanded: boolean;
+  isCompleted?: boolean;
+  onToggleExpand: () => void;
+  onToggleComplete: () => void;
+  onDelete: () => void;
+  onCreateProject: () => void;
+}
+
+function GoalCard({
+  goal,
+  isExpanded,
+  isCompleted,
+  onToggleExpand,
+  onToggleComplete,
+  onDelete,
+  onCreateProject,
+}: GoalCardProps) {
+  return (
+    <Card className={cn(isCompleted && "opacity-60")}>
+      <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
+        <CardHeader className="pb-3">
+          <div className="flex items-start gap-3">
+            {/* Expand/Collapse trigger */}
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 flex-shrink-0"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+
+            {/* Complete toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 flex-shrink-0"
+              onClick={onToggleComplete}
+            >
+              {isCompleted ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              ) : (
+                <Circle className="text-muted-foreground h-5 w-5" />
+              )}
+            </Button>
+
+            {/* Goal info */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4" style={{ color: TEAL_ACCENT }} />
+                <CardTitle
+                  className={cn("text-base", isCompleted && "line-through")}
+                >
+                  {goal.title}
+                </CardTitle>
+              </div>
+              {goal.description && (
+                <CardDescription className="mt-1 line-clamp-2">
+                  {goal.description}
+                </CardDescription>
+              )}
+
+              {/* Stats row */}
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="text-muted-foreground">
+                    {goal.completedTaskCount}/{goal.totalTaskCount} tasks
+                  </span>
+                  <span className="font-medium">
+                    {goal.calculatedProgress}%
+                  </span>
+                </div>
+                <Progress
+                  value={goal.calculatedProgress}
+                  className="h-2 w-32"
+                />
+                <Badge variant="outline">
+                  <FolderKanban className="mr-1 h-3 w-3" />
+                  {goal.projectCount} projects
+                </Badge>
+              </div>
+            </div>
+
+            {/* Actions menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onCreateProject}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Project
+                </DropdownMenuItem>
+                <DropdownMenuItem>Edit goal</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={onDelete}
+                >
+                  Delete goal
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardHeader>
+
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            {goal.projects.length === 0 ? (
+              <div className="text-muted-foreground rounded-lg border border-dashed p-6 text-center">
+                <FolderKanban className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                <p className="text-sm">No projects yet</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="mt-2"
+                  onClick={onCreateProject}
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  Add your first project
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {goal.projects.map((project) => {
+                  const completedCount = project.tasks.filter(
+                    (t) => t.status === "completed",
+                  ).length;
+                  const totalCount = project.tasks.length;
+                  const progress =
+                    totalCount > 0
+                      ? Math.round((completedCount / totalCount) * 100)
+                      : 0;
+
+                  return (
+                    <Link
+                      key={project.id}
+                      href={`/projects/${project.id}`}
+                      className="hover:bg-muted/50 flex items-center gap-3 rounded-lg border p-3 transition-colors"
+                    >
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: project.color ?? "#6b7280" }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{project.title}</span>
+                          <span className="text-muted-foreground text-sm">
+                            {completedCount}/{totalCount}
+                          </span>
+                        </div>
+                        <Progress value={progress} className="mt-1 h-1.5" />
+                      </div>
+                      <div className="text-muted-foreground flex items-center gap-1 text-sm">
+                        <ListTodo className="h-4 w-4" />
+                        {totalCount}
+                      </div>
+                    </Link>
+                  );
+                })}
+
+                {/* Add project button at the end */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground w-full justify-start"
+                  onClick={onCreateProject}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add project
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 }
