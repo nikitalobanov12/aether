@@ -44,6 +44,12 @@ bun run format:check     # Check Prettier formatting
 bun run format:write     # Auto-format all files
 bun run check            # Run lint + typecheck together
 
+# Testing
+bun run test             # Run tests in watch mode
+bun run test:run         # Run tests once
+bun run test:coverage    # Run tests with coverage report
+bun run ci               # Run all checks (lint, typecheck, tests)
+
 # Database (see "Database Migrations" section below)
 bun run db:generate      # Generate migration files from schema changes
 bun run db:migrate       # Run pending migrations (PRODUCTION)
@@ -52,6 +58,63 @@ bun run db:studio        # Open Drizzle Studio GUI
 bun run db:start         # Start Docker PostgreSQL container
 bun run db:stop          # Stop Docker PostgreSQL container
 ```
+
+## Testing
+
+We use **Vitest** with React Testing Library for testing. Tests are co-located with source files using `.test.ts` or `.test.tsx` extension.
+
+### Writing Tests
+
+```typescript
+// src/lib/utils.test.ts
+import { describe, expect, it } from "vitest";
+import { cn } from "~/lib/utils";
+
+describe("cn utility", () => {
+  it("should merge class names", () => {
+    expect(cn("foo", "bar")).toBe("foo bar");
+  });
+});
+```
+
+### Test Location
+
+- Place test files next to the code they test: `component.tsx` -> `component.test.tsx`
+- Test setup and mocks are in `src/test/setup.ts`
+
+### Running Tests
+
+```bash
+bun run test          # Watch mode (interactive)
+bun run test:run      # Single run (CI)
+bun run test:coverage # With coverage report
+```
+
+## CI/CD & Git Hooks
+
+### Pre-commit Hook
+
+- Runs `format:check` to ensure code is formatted
+
+### Pre-push Hook
+
+- Runs `bun run check` (lint + typecheck)
+- Runs `bun run test:run` (all tests)
+- Push is blocked if any check fails
+
+### GitHub Actions
+
+**CI Workflow** (`.github/workflows/ci.yml`):
+
+- Runs on push to main and PRs
+- Lint, typecheck, format check, tests
+- Build verification
+
+**Security Workflow** (`.github/workflows/security.yml`):
+
+- CodeQL analysis for vulnerabilities
+- Secret scanning with TruffleHog
+- Runs weekly and on push/PR
 
 ## Database Migrations
 
