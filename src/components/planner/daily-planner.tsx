@@ -24,6 +24,7 @@ import {
   Calendar,
   Sun,
   ExternalLink,
+  Plus,
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -31,6 +32,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Input } from "~/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +78,8 @@ export function DailyPlanner({
 }: DailyPlannerProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const isViewingToday = isToday(selectedDate);
 
@@ -146,9 +150,22 @@ export function DailyPlanner({
   const utils = api.useUtils();
 
   const completeMutation = api.task.complete.useMutation({
-    onSuccess: () => {
+    onSuccess: async (completedTask) => {
       void refetchTasks();
       void utils.history.getToday.invalidate();
+
+      // Sync completion status to Google Tasks if enabled
+      if (
+        googleCalendarStatus?.connected &&
+        googleCalendarStatus?.tasksEnabled &&
+        completedTask?.id
+      ) {
+        try {
+          await syncToGoogleMutation.mutateAsync({ taskId: completedTask.id });
+        } catch (e) {
+          console.error("Failed to sync completion to Google Tasks:", e);
+        }
+      }
     },
   });
 
@@ -164,6 +181,32 @@ export function DailyPlanner({
       void refetchTasks();
     },
   });
+
+  // Task creation mutation
+  const createTaskMutation = api.task.create.useMutation({
+    onSuccess: async (newTask) => {
+      void refetchTasks();
+      setNewTaskTitle("");
+      setIsAddingTask(false);
+
+      // Sync to Google Tasks if enabled
+      if (
+        googleCalendarStatus?.connected &&
+        googleCalendarStatus?.tasksEnabled
+      ) {
+        try {
+          await syncToGoogleMutation.mutateAsync({ taskId: newTask!.id });
+        } catch (e) {
+          // Silently fail - the task is created locally
+          console.error("Failed to sync to Google Tasks:", e);
+        }
+      }
+    },
+  });
+
+  // Google Tasks sync mutation
+  const syncToGoogleMutation =
+    api.googleCalendar.syncTaskToGoogle.useMutation();
 
   // Separate scheduled and unscheduled tasks
   const { scheduledTasks, unscheduledTasks, nextUpTask } = useMemo(() => {
@@ -192,6 +235,33 @@ export function DailyPlanner({
     },
     [snoozeMutation],
   );
+
+  // Handle quick task creation
+  const handleQuickAdd = useCallback(() => {
+    if (!newTaskTitle.trim()) return;
+
+    // Set due date to the selected date
+    const dueDate = new Date(selectedDate);
+    dueDate.setHours(23, 59, 59, 999);
+
+    createTaskMutation.mutate({
+      title: newTaskTitle.trim(),
+      dueDate: dueDate.toISOString(),
+      priority: "medium",
+    });
+  }, [newTaskTitle, selectedDate, createTaskMutation]);
+
+  // Handle keyboard submit for quick add
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleQuickAdd();
+    }
+    if (e.key === "Escape") {
+      setIsAddingTask(false);
+      setNewTaskTitle("");
+    }
+  };
 
   // Handle drag start
   const handleDragStart = (taskId: string) => {
@@ -509,6 +579,52 @@ export function DailyPlanner({
 
         {/* Right: Task list (60%) */}
         <div className="flex w-[60%] flex-col">
+          {/* Quick Add Task */}
+          <div className="border-b p-4">
+            {isAddingTask ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="What needs to be done?"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                  className="flex-1"
+                  disabled={createTaskMutation.isPending}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleQuickAdd}
+                  disabled={
+                    !newTaskTitle.trim() || createTaskMutation.isPending
+                  }
+                >
+                  {createTaskMutation.isPending ? "Adding..." : "Add"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsAddingTask(false);
+                    setNewTaskTitle("");
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                className="text-muted-foreground w-full justify-start"
+                onClick={() => setIsAddingTask(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add a task for{" "}
+                {isViewingToday ? "today" : format(selectedDate, "MMM d")}
+              </Button>
+            )}
+          </div>
+
           {/* Next Up Section */}
           {nextUpTask && (
             <div className="border-b p-4">
