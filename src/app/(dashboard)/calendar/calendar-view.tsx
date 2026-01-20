@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Plus,
+  ExternalLink,
+  Calendar,
+} from "lucide-react";
 import {
   format,
   addDays,
@@ -13,6 +20,7 @@ import {
   setHours,
   setMinutes,
   differenceInMinutes,
+  addMinutes,
 } from "date-fns";
 
 import { Button } from "~/components/ui/button";
@@ -40,6 +48,16 @@ const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 type TimeBlock = RouterOutputs["timeBlock"]["getByDateRange"][number];
 type Task = RouterOutputs["task"]["getByDateRange"]["scheduled"][number];
+type GoogleCalendarEvent = {
+  id: string;
+  title: string;
+  description: string | null;
+  startTime: string;
+  endTime: string;
+  allDay: boolean;
+  location: string | null;
+  htmlLink: string | null;
+};
 
 interface CalendarViewProps {
   initialTimeBlocks: TimeBlock[];
@@ -58,6 +76,9 @@ export function CalendarView({
     date: Date;
     hour: number;
   } | null>(null);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   const weekStart = useMemo(
     () => startOfWeek(currentDate, { weekStartsOn: 0 }),
@@ -103,6 +124,26 @@ export function CalendarView({
     },
   );
 
+  // Fetch Google Calendar status and events
+  const { data: googleCalendarStatus } =
+    api.googleCalendar.getStatus.useQuery();
+  const { data: googleEventsData } = api.googleCalendar.getEvents.useQuery(
+    {
+      startDate: weekStart.toISOString(),
+      endDate: weekEnd.toISOString(),
+    },
+    {
+      enabled:
+        googleCalendarStatus?.connected &&
+        googleCalendarStatus?.calendarEnabled,
+    },
+  );
+
+  const googleEvents: GoogleCalendarEvent[] = useMemo(
+    () => googleEventsData?.events ?? [],
+    [googleEventsData?.events],
+  );
+
   const createTimeBlock = api.timeBlock.create.useMutation({
     onSuccess: () => {
       void refetchBlocks();
@@ -111,6 +152,40 @@ export function CalendarView({
       setSelectedSlot(null);
     },
   });
+
+  // Task creation mutation
+  const createTaskMutation = api.task.create.useMutation({
+    onSuccess: async (newTask) => {
+      void refetchTasks();
+      setNewTaskTitle("");
+      setIsAddingTask(false);
+
+      // Sync to Google Tasks if enabled
+      if (
+        googleCalendarStatus?.connected &&
+        googleCalendarStatus?.tasksEnabled
+      ) {
+        try {
+          await syncToGoogleMutation.mutateAsync({ taskId: newTask!.id });
+        } catch (e) {
+          console.error("Failed to sync to Google Tasks:", e);
+        }
+      }
+    },
+  });
+
+  // Task schedule mutation
+  const scheduleMutation = api.task.schedule.useMutation({
+    onSuccess: () => {
+      void refetchTasks();
+      void refetchBlocks();
+      setDraggedTaskId(null);
+    },
+  });
+
+  // Google Tasks sync mutation
+  const syncToGoogleMutation =
+    api.googleCalendar.syncTaskToGoogle.useMutation();
 
   // These mutations are prepared for the edit/delete UI to be added
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -137,6 +212,54 @@ export function CalendarView({
     setIsDialogOpen(true);
   };
 
+  // Handle quick task creation
+  const handleQuickAdd = useCallback(() => {
+    if (!newTaskTitle.trim()) return;
+
+    // Set due date to end of today
+    const dueDate = new Date();
+    dueDate.setHours(23, 59, 59, 999);
+
+    createTaskMutation.mutate({
+      title: newTaskTitle.trim(),
+      dueDate: dueDate.toISOString(),
+      priority: "medium",
+    });
+  }, [newTaskTitle, createTaskMutation]);
+
+  // Handle keyboard submit for quick add
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleQuickAdd();
+    }
+    if (e.key === "Escape") {
+      setIsAddingTask(false);
+      setNewTaskTitle("");
+    }
+  };
+
+  // Handle drop on time slot (for unscheduled tasks)
+  const handleDrop = useCallback(
+    (day: Date, hour: number) => {
+      if (!draggedTaskId) return;
+
+      const task = tasksData.unscheduled.find((t) => t.id === draggedTaskId);
+      if (!task) return;
+
+      const scheduledStart = setMinutes(setHours(day, hour), 0);
+      const duration = task.estimatedMinutes ?? 60;
+      const scheduledEnd = addMinutes(scheduledStart, duration);
+
+      scheduleMutation.mutate({
+        id: draggedTaskId,
+        scheduledStart: scheduledStart.toISOString(),
+        scheduledEnd: scheduledEnd.toISOString(),
+      });
+    },
+    [draggedTaskId, tasksData.unscheduled, scheduleMutation],
+  );
+
   // Get blocks for a specific day
   const getBlocksForDay = (day: Date) => {
     return timeBlocks.filter((block) =>
@@ -153,6 +276,18 @@ export function CalendarView({
         !timeBlocks.some((block) => block.taskId === task.id),
     );
   };
+
+  // Get Google Calendar events for a specific day
+  const getGoogleEventsForDay = (day: Date) => {
+    return googleEvents.filter(
+      (event) => !event.allDay && isSameDay(new Date(event.startTime), day),
+    );
+  };
+
+  // Get all-day Google events for the week
+  const allDayGoogleEvents = useMemo(() => {
+    return googleEvents.filter((e) => e.allDay);
+  }, [googleEvents]);
 
   // Get unscheduled tasks with due dates
   const unscheduledTasks = useMemo(() => {
@@ -218,6 +353,47 @@ export function CalendarView({
                 ))}
               </div>
 
+              {/* All-day Google Calendar events */}
+              {allDayGoogleEvents.length > 0 && (
+                <div className="bg-background sticky top-[72px] z-10 grid grid-cols-[60px_repeat(7,1fr)] border-b bg-purple-50 dark:bg-purple-950/20">
+                  <div className="flex items-center justify-center p-2">
+                    <Calendar className="h-4 w-4 text-purple-500" />
+                  </div>
+                  {weekDays.map((day) => {
+                    const dayEvents = allDayGoogleEvents.filter((event) =>
+                      isSameDay(new Date(event.startTime), day),
+                    );
+                    return (
+                      <div
+                        key={`allday-${day.toISOString()}`}
+                        className="flex flex-wrap gap-1 border-l p-1"
+                      >
+                        {dayEvents.map((event) => (
+                          <div
+                            key={`allday-${event.id}`}
+                            className="flex items-center gap-1 rounded-full border border-purple-300/50 bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-300"
+                          >
+                            <span className="max-w-[80px] truncate">
+                              {event.title}
+                            </span>
+                            {event.htmlLink && (
+                              <a
+                                href={event.htmlLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-purple-500 hover:text-purple-700"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Time grid */}
               <div className="grid grid-cols-[60px_repeat(7,1fr)]">
                 {/* Time labels */}
@@ -246,16 +422,27 @@ export function CalendarView({
                     )}
                     style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
                   >
-                    {/* Hour lines */}
+                    {/* Hour lines with drag-drop support */}
                     {Array.from({ length: TOTAL_HOURS }, (_, i) => (
                       <div
                         key={i}
-                        className="border-muted hover:bg-muted/50 absolute inset-x-0 cursor-pointer border-b border-dashed transition-colors"
+                        className={cn(
+                          "border-muted absolute inset-x-0 cursor-pointer border-b border-dashed transition-colors",
+                          draggedTaskId && "hover:bg-primary/10",
+                        )}
                         style={{
                           top: i * HOUR_HEIGHT,
                           height: HOUR_HEIGHT,
                         }}
                         onClick={() => handleSlotClick(day, START_HOUR + i)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          handleDrop(day, START_HOUR + i);
+                        }}
                       />
                     ))}
 
@@ -298,6 +485,61 @@ export function CalendarView({
                               {format(blockEnd, "h:mm a")}
                             </div>
                           )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Google Calendar events */}
+                    {getGoogleEventsForDay(day).map((event) => {
+                      const eventStart = new Date(event.startTime);
+                      const eventEnd = new Date(event.endTime);
+                      const startMinutes =
+                        (eventStart.getHours() - START_HOUR) * 60 +
+                        eventStart.getMinutes();
+                      const durationMinutes = differenceInMinutes(
+                        eventEnd,
+                        eventStart,
+                      );
+                      const top = (startMinutes / 60) * HOUR_HEIGHT;
+                      const height = (durationMinutes / 60) * HOUR_HEIGHT;
+
+                      return (
+                        <div
+                          key={`google-${event.id}`}
+                          className="absolute inset-x-1 overflow-hidden rounded-md border border-dashed border-purple-400/50 bg-purple-500/10 p-1 text-xs"
+                          style={{
+                            top: Math.max(0, top),
+                            height: Math.max(20, height),
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-1">
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate font-medium text-purple-700 dark:text-purple-300">
+                                {event.title}
+                              </div>
+                              {height > 30 && (
+                                <div className="truncate text-purple-600/70 dark:text-purple-400/70">
+                                  {format(eventStart, "h:mm a")} -{" "}
+                                  {format(eventEnd, "h:mm a")}
+                                </div>
+                              )}
+                              {height > 50 && event.location && (
+                                <div className="mt-0.5 truncate text-purple-600/50 dark:text-purple-400/50">
+                                  {event.location}
+                                </div>
+                              )}
+                            </div>
+                            {event.htmlLink && (
+                              <a
+                                href={event.htmlLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-purple-500 opacity-50 transition-opacity hover:opacity-100"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
@@ -370,26 +612,73 @@ export function CalendarView({
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
+            {/* Quick Add Task */}
+            <div className="mb-4">
+              {isAddingTask ? (
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder="What needs to be done?"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    disabled={createTaskMutation.isPending}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleQuickAdd}
+                      disabled={
+                        !newTaskTitle.trim() || createTaskMutation.isPending
+                      }
+                    >
+                      {createTaskMutation.isPending ? "Adding..." : "Add Task"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setIsAddingTask(false);
+                        setNewTaskTitle("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="text-muted-foreground w-full justify-start"
+                  onClick={() => setIsAddingTask(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add a task
+                </Button>
+              )}
+            </div>
+
+            <ScrollArea className="h-[calc(100%-60px)]">
               {unscheduledTasks.length === 0 ? (
                 <p className="text-muted-foreground text-sm">
                   All tasks are scheduled!
                 </p>
               ) : (
                 <div className="space-y-2">
+                  <p className="text-muted-foreground mb-2 text-xs">
+                    Drag tasks to calendar to schedule
+                  </p>
                   {unscheduledTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="hover:bg-muted/50 cursor-grab rounded-lg border p-2 text-sm transition-colors"
+                      className={cn(
+                        "hover:bg-muted/50 cursor-grab rounded-lg border p-2 text-sm transition-colors",
+                        draggedTaskId === task.id && "opacity-50",
+                      )}
                       draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("taskId", task.id);
-                        e.dataTransfer.setData("taskTitle", task.title);
-                        e.dataTransfer.setData(
-                          "estimatedMinutes",
-                          String(task.estimatedMinutes ?? 60),
-                        );
-                      }}
+                      onDragStart={() => setDraggedTaskId(task.id)}
+                      onDragEnd={() => setDraggedTaskId(null)}
                     >
                       <div className="font-medium">{task.title}</div>
                       <div className="mt-1 flex items-center gap-2">
@@ -412,6 +701,11 @@ export function CalendarView({
                         {task.dueDate && (
                           <span className="text-muted-foreground text-xs">
                             Due {format(new Date(task.dueDate), "MMM d")}
+                          </span>
+                        )}
+                        {task.estimatedMinutes && (
+                          <span className="text-muted-foreground text-xs">
+                            ~{task.estimatedMinutes}m
                           </span>
                         )}
                       </div>
