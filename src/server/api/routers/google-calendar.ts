@@ -12,12 +12,12 @@ import {
 import { env } from "~/env";
 import { type db as dbType } from "~/server/db";
 
-// OAuth2 client setup
+// OAuth2 client setup - uses a separate callback URL from Better Auth
 function getOAuth2Client() {
   return new google.auth.OAuth2(
     env.GOOGLE_CLIENT_ID,
     env.GOOGLE_CLIENT_SECRET,
-    `${env.BETTER_AUTH_URL ?? "http://localhost:3000"}/api/auth/callback/google`,
+    `${env.BETTER_AUTH_URL ?? "http://localhost:3000"}/api/google-calendar/callback`,
   );
 }
 
