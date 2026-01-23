@@ -4,41 +4,44 @@
   
   <defs>
     <!-- Teal gradient: bottom to top -->
-    <linearGradient id="tealGradient" x1="512" y1="800" x2="512" y2="200" gradientUnits="userSpaceOnUse">
+    <linearGradient id="tealGradient" x1="512" y1="780" x2="512" y2="220" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#2A9EAE"/>
       <stop offset="100%" stop-color="#32B8C6"/>
     </linearGradient>
   </defs>
 
-  <!-- Three ascending bars forming abstract "A" shape -->
-  <g>
-    <!-- Left bar (shortest) -->
-    <rect x="240" y="540" width="120" height="280" rx="60" fill="url(#tealGradient)"/>
+  <!-- Three ascending bars with thin arc connectors, optically centered -->
+  <!-- Equal spacing: 172px between bar centers -->
+  <g transform="translate(512, 512)">
+    <!-- Left bar (shortest) - slightly angled inward for A-hint -->
+    <rect x="-272" y="20" width="104" height="260" rx="52" fill="url(#tealGradient)" transform="rotate(-4, -220, 280)"/>
     
     <!-- Middle bar (medium) -->
-    <rect x="452" y="380" width="120" height="440" rx="60" fill="url(#tealGradient)"/>
+    <rect x="-52" y="-120" width="104" height="400" rx="52" fill="url(#tealGradient)"/>
     
     <!-- Right bar (tallest) -->
-    <rect x="664" y="200" width="120" height="620" rx="60" fill="url(#tealGradient)"/>
+    <rect x="168" y="-280" width="104" height="560" rx="52" fill="url(#tealGradient)"/>
     
-    <!-- Connecting curve: left to middle -->
+    <!-- Thin arc connector: left to middle (higher, thinner path) -->
     <path d="
-      M 300 540
-      Q 300 480, 360 450
-      Q 420 420, 512 420
-      L 512 480
-      Q 440 480, 390 500
-      Q 340 520, 300 540
+      M -210 20
+      Q -210 -30, -150 -55
+      Q -90 -80, 0 -80
+      L 0 -120
+      Q -110 -120, -175 -85
+      Q -240 -50, -240 20
+      Z
     " fill="url(#tealGradient)"/>
     
-    <!-- Connecting curve: middle to right -->
+    <!-- Thin arc connector: middle to right (higher, thinner path) -->
     <path d="
-      M 512 380
-      Q 512 320, 572 290
-      Q 632 260, 724 260
-      L 724 320
-      Q 652 320, 602 340
-      Q 552 360, 512 380
+      M 52 -120
+      Q 52 -180, 112 -210
+      Q 172 -240, 220 -240
+      L 220 -280
+      Q 152 -280, 92 -240
+      Q 32 -200, 32 -120
+      Z
     " fill="url(#tealGradient)"/>
   </g>
 </svg>
