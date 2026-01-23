@@ -125,7 +125,7 @@ export const verification = pgTable("verification", {
 
 // Boards (Kanban boards)
 export const board = pgTable(
-  "dayflow_board",
+  "aether_board",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -149,7 +149,7 @@ export const board = pgTable(
 
 // Goals
 export const goal = pgTable(
-  "dayflow_goal",
+  "aether_goal",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -181,7 +181,7 @@ export const goal = pgTable(
 
 // Projects (sits between Goals and Tasks in hierarchy)
 export const project = pgTable(
-  "dayflow_project",
+  "aether_project",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -211,7 +211,7 @@ export const project = pgTable(
 
 // Tasks
 export const task = pgTable(
-  "dayflow_task",
+  "aether_task",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -275,7 +275,7 @@ export const task = pgTable(
 
 // Time Blocks (for calendar view)
 export const timeBlock = pgTable(
-  "dayflow_time_block",
+  "aether_time_block",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -307,7 +307,7 @@ export const timeBlock = pgTable(
 
 // Completed Task History (preserves record of all completions)
 export const completedTask = pgTable(
-  "dayflow_completed_task",
+  "aether_completed_task",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     taskId: uuid("task_id")
@@ -338,7 +338,7 @@ export const completedTask = pgTable(
 
 // Habit Streaks (tracks recurring habits with history preserved even when broken)
 export const habitStreak = pgTable(
-  "dayflow_habit_streak",
+  "aether_habit_streak",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -365,7 +365,7 @@ export const habitStreak = pgTable(
 
 // Google Integration (OAuth tokens for Calendar and Tasks API)
 export const googleIntegration = pgTable(
-  "dayflow_google_integration",
+  "aether_google_integration",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -396,7 +396,7 @@ export const googleIntegration = pgTable(
 
 // Sync Log (tracks all sync operations for debugging and status)
 export const syncLog = pgTable(
-  "dayflow_sync_log",
+  "aether_sync_log",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")
@@ -420,7 +420,7 @@ export const syncLog = pgTable(
 );
 
 // User Preferences (settings)
-export const userPreferences = pgTable("dayflow_user_preferences", {
+export const userPreferences = pgTable("aether_user_preferences", {
   id: text("id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
@@ -468,7 +468,7 @@ export const userPreferences = pgTable("dayflow_user_preferences", {
 
 // Subscriptions (Stripe)
 export const subscription = pgTable(
-  "dayflow_subscription",
+  "aether_subscription",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: text("user_id")

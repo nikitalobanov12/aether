@@ -41,7 +41,7 @@ export const auth = betterAuth({
     skipStateCookieCheck: true, // Skip state verification - works around state mismatch in dev
   },
   advanced: {
-    cookiePrefix: "dayflow",
+    cookiePrefix: "aether",
     useSecureCookies: process.env.NODE_ENV === "production",
     defaultCookieAttributes: {
       sameSite: "lax",

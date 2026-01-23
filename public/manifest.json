@@ -1,11 +1,11 @@
 {
-  "name": "Dayflow",
-  "short_name": "Dayflow",
+  "name": "Aether",
+  "short_name": "Aether",
   "description": "The task planner that syncs calendar, tasks, and life goals in one unified system.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#6FB3A0",
+  "background_color": "#F5F7FA",
+  "theme_color": "#32B8C6",
   "icons": [
     {
       "src": "/favicon.svg",

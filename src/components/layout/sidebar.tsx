@@ -287,9 +287,9 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/today" className="flex items-center gap-2">
           <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-            <span className="text-primary-foreground text-lg font-bold">D</span>
+            <span className="text-primary-foreground text-lg font-bold">A</span>
           </div>
-          <span className="text-xl font-bold">Dayflow</span>
+          <span className="text-xl font-bold">Aether</span>
         </Link>
       </div>
 
@@ -327,10 +327,10 @@ export function MobileNav({ user }: SidebarProps) {
           >
             <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
               <span className="text-primary-foreground text-lg font-bold">
-                D
+                A
               </span>
             </div>
-            <span className="text-xl font-bold">Dayflow</span>
+            <span className="text-xl font-bold">Aether</span>
           </Link>
         </div>
 

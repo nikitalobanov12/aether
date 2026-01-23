@@ -1,5 +1,5 @@
 {
-  "name": "dayflow",
+  "name": "aether",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:start": "./start-database.sh",
-    "db:stop": "docker stop dayflow-postgres 2>/dev/null || true",
+    "db:stop": "docker stop aether-postgres 2>/dev/null || true",
     "dev": "./scripts/ensure-db.sh && next dev --turbo",
     "dev:next": "next dev --turbo",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",

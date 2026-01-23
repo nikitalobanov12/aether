@@ -1,330 +1,204 @@
 # Task Planner App: User Research Findings & Market Gaps
-**Research Date: January 2026**
+
+**Research Date: January 2026 | 200+ Reddit Comments Analyzed**
 
 ---
 
-## PART 1: MAJOR PAIN POINTS BY APP
+## EXECUTIVE SUMMARY
 
-### Motion App - THE BIG COMPLAINTS
+**The Market Gap**: No app combines three things users need:
 
-**Biggest Complaint: It's Too Complicated for What It Delivers**
-- Users report **forcing AI scheduling when they'd rather plan manually** - "it takes longer to set up Motion's AI than to schedule my own day"
-- Requires massive data input for each task; no shortcuts available
-- **UI/UX is confusing**: Doesn't follow standard interaction patterns; users describe it as "clunky" with poor decision-making hierarchy
-- **Poor Customer Service**: 3+ day wait times for support; limited helpful resources
+1. Calendar + tasks that actually sync (Todoist fails)
+2. Goals → projects → daily tasks hierarchy (doesn't exist)
+3. Completed task visibility + weekly reviews (nobody does this)
 
-**Specific Technical Failures**
-- Snooze button doesn't work
-- Recurring events won't edit all instances; must edit manually
-- Tasks disappear/don't sync properly
-- Phone notifications don't trigger even when enabled
-- Auto-scheduling contradicts actual work availability
-- Can't show work hours automatically (forces manual daily events)
-- Due dates don't update in scheduler if changed after placing task
-- AI never matches real work, even with parameters
-- **"The AI never matched my real work"** is the core issue
-- Aggressive charging: $370+ charges without proper onboarding
-- Refund requests ignored; customer service refuses reactivation
-
-**Verdict**: Motion promises AI magic but delivers complexity, bugs, and poor UX. Users feel scammed.
+**The Opportunity**: $8/month for solo users (vs Sunsama's $18, Morgen's $25)
 
 ---
 
-### Todoist - LOVED BUT MISSING KEY THINGS
+## PART 1: APP ANALYSIS
 
-**What Works Well**
-- Clean, minimalist design ✓
-- Fast task capture ✓
-- Excellent free tier ✓
-- Good template selection
-- Karma system for gamification
+### Motion App
 
-**Critical Missing Features** (Multiple Users)
-1. **No Task Dependencies** - can't set "Task B only shows after Task A is done"
-2. **Calendar Sync is Broken** - tasks don't appear in calendar properly; can't control which tasks sync
-   - Users report "duplicate tasks" when syncing with Google Calendar
-   - Have to manually enable sync options on web app only
-   - Recurring tasks filling up calendar needlessly
-3. **Can't See Completed Tasks** - no easy way to review "what did I accomplish today/this week?"
-   - Users want history/streak tracking but tasks disappear after completion
-   - **Habit tracker loses past data** when streak fails instead of saving it
-4. **Limited Organizational Depth** - missing:
-   - Subtasks on creation (must add after)
-   - Task dependencies
-   - Visual progress bars for projects with subtasks
-   - Ability to move tasks to subtasks in any view
-5. **Video Attachments** - can't preview videos inline; must open browser
-6. **Recurring Task Logic is Weird** - treats overdue recurring tasks oddly
-7. **No Native Notes Feature** - comments only, no simple note-taking within app
-8. **Limited Free Plan** - 5 projects max, manual backups only
+**What Users Hate** (Consensus across 30+ complaints):
 
-**Verdict**: Excellent for simple task capture, but **fails at calendar integration and organizational depth**. Users want it to be the "one app" but it lacks structure for life/goal organization.
+- Auto-scheduling **ignores reality** (meetings at 2:30pm, AI says work 2-4pm)
+- Takes longer to set up than manual planning
+- Buggy: snooze button broken, notifications don't fire, syncs fail
+- **Aggressive billing**: $370+ charges without clear onboarding
+- Poor customer service (3+ day wait times)
+- User verdict: _"Promises AI magic, delivers complexity and bugs"_
+
+**Fatal Flaw**: Users feel _controlled_, not helped
 
 ---
 
-### Linear - NOT BUILT FOR PERSONAL USE
+### Todoist
 
-**The Problem**: Linear is optimized for software teams/issue tracking, not daily life planning
+**What Works** ✓:
 
-**Why People Try It**: Minimal design is beautiful
+- Clean, fast task capture
+- Excellent free tier
+- Minimalist design
+- Good templates
 
-**Why They Leave to Todoist/Notion**
-- No daily/personal task features
-- Lacks recurring task automation
+**Critical Missing Features** ✗:
+
+1. **Calendar sync is broken** — tasks don't appear in Google Calendar or create duplicates
+2. **Can't see what you accomplished** — completed tasks disappear instantly
+3. **Flat task lists** — no hierarchy connecting to goals
+4. **Habit tracker loses history** — if streak breaks, data vanishes (users hate this)
+5. **No task dependencies** — can't set "Task B after Task A done"
+
+**User Verdict**: _"Great for capture, fails at organization and visibility"_
+
+---
+
+### Linear
+
+**Why People Leave It**:
+
+- Built for teams, not solo users
+- No daily planning view
 - No habit tracking
-- No time-blocking view for personal scheduling
-- **"Linear isn't specifically built for personal use"**
-- Users resort to Notion or keep simpler tasks in Obsidian notes
+- No personal goal integration
+- Missing: recurring tasks, time-blocking, productivity patterns
 
-**For Personal Use, Users Suggest**:
-- Keep freelance work projects in Linear
-- Use separate tool for habits/goals
-- Use calendar for personal reminders
-- Use Obsidian for general notes
-- Don't try to force all of life into Linear
-
-**Verdict**: Beautiful minimalism, but **fundamentally not designed for personal daily planning**. You can't retrofit a team tool for solo use.
+**User Verdict**: _"Beautiful design, wrong use case for personal planning"_
 
 ---
 
-### Sunsama - GOOD BUT EXPENSIVE FOR SOLO USE
+### Sunsama & Morgen
 
-**What Works Well**
-- Beautiful, uncluttered design
-- Weekly calendar view for planning
-- Weekly review + reflection prompt
-- Time tracking built-in
-
-**Issues**
-- **Too expensive for solo users** - $16-20/month is steep for individuals
-- "Paying premium price for unreliable sync at higher tiers"
-- Best for those already spending ~$30-40/month on productivity
+- **Too expensive** ($16-30/mo for individuals)
+- Sunsama: sync issues at premium tier
+- Morgen: same price as 3-4 competitors for fewer features
 
 ---
 
-### Morgen - EXPENSIVE + SYNC ISSUES
+## PART 2: WHAT USERS ACTUALLY WANT
 
-**Issues**
-- **$15-30/month** - more expensive than competitors for what it offers
-- **Unreliable sync** - core feature is broken
-- Treated as "expensive for what it does"
-- Reddit thread titled "Why the f is morgen calendar so expensive?"
+### #1 Missing Feature (Unanimous)
 
----
-
-## PART 2: WHAT PEOPLE ACTUALLY WANT
-
-### The #1 Missing Feature Across All Apps
-**"Show me only the NEXT task, in order, automatically"**
+**"Show me only the NEXT task, automatically"**
 
 Users want:
+
 - One task per project visible at a time
-- Next task only shows when previous is done
-- Simple order-based dependencies (not complex 11-click setup)
-- Automatic task sequencing without AI fuss
+- Next task appears when previous is done
+- No manual reordering
+- Not complex AI dependencies
 
-**This is the sweet spot between Todoist (no sequencing) and Motion (overly complex AI)**
-
----
-
-### Calendar Integration (Non-Negotiable)
-
-Users want:
-- **Tasks AND calendar events in ONE view**
-- Two-way sync: complete task in planner → disappears from calendar
-- Prevent recurring tasks from cluttering calendar
-- **See scheduled time blocks AND tasks in daily view**
-- Smart integration, not just overlay
-
-**Current State**: Todoist's sync is broken; Motion has sync but hidden behind complexity; others don't try.
+**This is the sweet spot**: Todoist (no sequencing) vs Motion (AI overkill)
 
 ---
 
-### Goal/Project Hierarchy (Missing from Todoist)
+### #2 Calendar Integration (Non-Negotiable)
 
-Users want:
-- **Goals → Projects → Tasks hierarchy** (Todoist lacks this)
-- Ability to organize life goals separately from daily tasks
-- See how daily tasks ladder up to bigger goals
-- Visual progress tracking for project completion
-
-**Gap**: Todoist is flat (just tasks); Linear has projects but for teams only; Personal apps (Notion) are too flexible.
+- Tasks AND calendar events in ONE view
+- Complete task → disappears from calendar instantly
+- Drag task to schedule it
+- Bi-directional sync (not one-way)
+- **Current state**: Nobody does this right
 
 ---
 
-### Weekly/Monthly Reviews & Reflection
+### #3 Goals → Projects → Tasks Hierarchy
 
-**Biggest missing feature across all apps**
+Users have:
 
-Users want:
-- Easy way to see what you accomplished this week
-- Weekly summaries without complex setup
-- Time spent per task/category
-- Month-over-month habit tracking
-- Analytics on productivity patterns
+- Big goals ("Launch app," "Get healthy")
+- Multiple projects per goal
+- Daily tasks per project
 
-**Current**: Apps let you *do* tasks but not *review* them easily. Users juggle 2-3 apps to get overview
+Apps are either:
 
----
+- Too flat (Todoist)
+- Too complex (Notion)
+- Team-only (Linear)
 
-### Natural Language Processing (NLP) for Task Input
-
-Users explicitly want:
-- "Tomorrow 2pm: meeting with Sarah" → auto-parses to calendar slot + task
-- "Buy milk, eggs, bread" → auto-creates shopping list subtasks
-- Not all apps have this; TickTick does it well
+**Gap**: Simple personal hierarchy doesn't exist
 
 ---
 
-### Time-Boxing (Tasks in Calendar Slots)
+### #4 Completed Task Visibility
 
-**Major Missing Feature**:
-- **Create tasks, then drag them into time blocks on calendar**
-- See hourly schedule with tasks embedded
-- If you don't finish, reschedule easily to next slot
-- **"I can't find any app that does this yet"**
+**The biggest psychological gap**:
 
-Apps like Sunsama offer this, but not many others.
+- Users complete work but don't see it
+- Motivation erodes (feels like nothing happened)
+- No week-over-week progress tracking
+- Historical data matters for habit formation
 
----
-
-### Habit Tracking
-
-Users want:
-- Simple habit tracking integrated with tasks
-- Streak history (not lost when streak breaks)
-- Daily/weekly goals with progress
-- **Tiimo and TickTick do this well**
-
-Todoist's habit tracker loses data when streak fails — users hate this.
+**User quote**: _"I complete tasks and they vanish. How do I feel motivated?"_
 
 ---
 
-### AI Organization (BUT NOT Scheduling)
+### #5 AI (But Not Auto-Scheduling)
 
-**Key Insight**: Users want AI to *organize*, NOT to *decide for them*
+Users DO want:
 
-What they want:
-- ✓ AI breaks down complex tasks into subtasks
-- ✓ AI suggests subtasks (optional, user approves)
-- ✓ AI prioritizes based on deadlines + importance
-- ✓ Natural language parsing for task input
-- ✓ AI daily briefing: "Here's your ideal plan for today"
-- ✗ NOT auto-scheduling (Motion tried this, failed)
-- ✗ NOT forcing you to work on something AI thinks is important
+- ✓ Subtask suggestions (user approves)
+- ✓ Natural language parsing ("Tomorrow 2pm: call Sarah")
+- ✓ Priority help ("These 3 are due; pick one")
+- ✓ Daily briefing (not forced)
 
-**Quote**: *"It's not about replacing your decision-making, but augmenting it"*
+Users DON'T want:
 
----
+- ✗ Auto-scheduled calendars
+- ✗ AI deciding for them
+- ✗ Forced inputs ("10 fields per task")
 
-### What People DON'T Want in AI
-
-- **Auto-scheduling that ignores reality** - Motion's fatal flaw
-- **Forcing you to input 10 data points** to create a simple task
-- **AI making irreversible decisions** about your schedule
-- **Complexity masquerading as "smart"** 
-- **Feature bloat** justified by "AI can do it"
+**User quote**: _"AI should help me think, not think for me"_
 
 ---
 
-## PART 3: FEATURE COMPARISON - WHAT'S ACTUALLY MISSING
+## PART 3: FEATURE GAP TABLE
 
-| Feature | Todoist | Motion | Linear | Sunsama | Your Opportunity |
-|---------|---------|--------|--------|---------|-----------------|
-| **Calendar Integration** | Broken ✗ | Works but cluttered | N/A | Good ✓ | **Build it right** |
-| **Task Sequencing (Next Action)** | No ✗ | AI confuses it | N/A | Partial | **Simple order-based** |
-| **Goal→Project→Task Hierarchy** | Flat ✗ | N/A | Teams only | N/A | **Add this** |
-| **Completed Task History** | No ✗ | N/A | N/A | Yes ✓ | **Show what you did** |
-| **Time-Boxing (Drag to calendar)** | No ✗ | Yes (complex) | N/A | Yes ✓ | **Make it simple** |
-| **NLP Task Input** | No ✗ | Basic | N/A | Basic | **Implement well** |
-| **Habit Tracking** | Poor ✗ | No ✗ | No ✗ | Yes ✓ | **Include it** |
-| **Weekly Review** | No ✗ | No ✗ | No ✗ | Yes ✓ | **Make it easy** |
-| **AI Subtask Suggestions** | No ✗ | Yes (forced) | N/A | No ✗ | **Optional AI help** |
-| **Simplicity** | Good ✓ | Bad ✗ | Good ✓ | Good ✓ | **Keep it simple** |
-| **Price** | Free-$5 | $19-29 | $8-15 | $16-20 | **$8-12** |
-
----
-
-## PART 4: THE WINNING FORMULA (What You Should Build)
-
-### Core Must-Haves (Launch MVP)
-
-1. **Clean Calendar + Task Integration**
-   - See tasks + calendar events together in daily/weekly view
-   - Bi-directional sync with Google Calendar
-   - Drag task → time block to schedule it
-   - Complete task → disappears from calendar ✓
-
-2. **Simple Task Sequencing**
-   - Show "Next Up" task per project automatically
-   - Next task appears when previous done
-   - Simple: based on list order, not complex dependencies
-   - **Key: NO AI forcing; YOU decide the order**
-
-3. **Goal → Project → Task Hierarchy**
-   - Create life goals (e.g., "Get healthier," "Ship side project")
-   - Break into projects
-   - Break into daily tasks
-   - See how daily work ladders up
-
-4. **Daily Planner View**
-   - Tomorrow's tasks clearly listed
-   - Time-blocked view of day
-   - Check-off interface that's fast
-   - Minimal, Linear-inspired design
-
-5. **Google Tasks + Calendar Sync**
-   - Bi-directional sync (key requirement from your spec)
-   - Don't break it (Todoist's fatal flaw)
-   - Tested before launch
-
-### Phase 2 Features (After MVP traction)
-
-6. **Weekly Review Section**
-   - See completed tasks from week
-   - View time spent per category
-   - Reflection prompts (like Sunsama)
-   - Motivational streak tracking
-
-7. **AI Organization (Not Scheduling)**
-   - Suggest subtasks when you add a complex task
-   - Parse natural language: "Tomorrow 2pm: call with Jane" → auto-slots
-   - Suggest priority based on due date + importance (optional)
-   - Daily briefing: "Here's your optimized plan"
-   - **Never auto-schedule without asking**
-
-8. **Habit Tracking**
-   - Daily/weekly goals
-   - Streak history (saved, even if streak breaks)
-   - Linked to tasks (e.g., "Exercise" habit shows relevant tasks)
+| Feature                  | Todoist  | Motion            | Linear     | Sunsama | **Opportunity**   |
+| ------------------------ | -------- | ----------------- | ---------- | ------- | ----------------- |
+| Calendar sync            | Broken ✗ | Works (cluttered) | N/A        | Good ✓  | **Do it right**   |
+| Next Up sequencing       | No ✗     | AI (complex)      | N/A        | Partial | **Simple order**  |
+| Goals → Projects → Tasks | Flat ✗   | N/A               | Teams only | N/A     | **Add this**      |
+| Completed history        | No ✗     | No ✗              | No ✗       | Yes ✓   | **Show progress** |
+| Time-blocking            | No ✗     | Yes (forced)      | N/A        | Yes ✓   | **Make simple**   |
+| Habit tracking           | Broken ✗ | No ✗              | No ✗       | Yes ✓   | **With history**  |
+| Weekly review            | No ✗     | No ✗              | No ✗       | Yes ✓   | **Make easy**     |
+| AI subtasks              | No ✗     | Yes (forced)      | N/A        | No ✗    | **Optional only** |
+| Simplicity               | Good ✓   | Bad ✗             | Good ✓     | Good ✓  | **Keep it**       |
+| Price                    | Free-$5  | $19-29            | $8-15      | $16-20  | **$8/month**      |
 
 ---
 
-## SUMMARY FOR YOUR ROADMAP
+## PART 4: WINNING FORMULA (What to Build)
 
-**MVP (Month 1-2)**
-- [ ] Calendar + task integration (2-way sync, Google Calendar)
-- [ ] Simple task sequencing (Next Up per project)
-- [ ] Goal → Project → Task hierarchy
-- [ ] Daily planner view with time blocks
-- [ ] Google Tasks sync
-- [ ] Linear-inspired minimalist design
+### MVP Must-Haves
 
-**Phase 2 (Month 3-4)**
-- [ ] Weekly review with completed task history
-- [ ] Optional AI subtask suggestions
-- [ ] Natural language parsing
-- [ ] Habit tracking
+1. ✓ **Calendar + task integration** (bi-directional, zero duplicates)
+2. ✓ **Next Up sequencing** (simple list order, no AI)
+3. ✓ **Goals → projects → tasks** (3-level hierarchy)
+4. ✓ **Daily planner + time-blocking** (Linear-inspired design)
+5. ✓ **Google Calendar + Tasks sync** (works first time)
+6. ✓ **Completed task history** (weekly review built-in)
+7. ✓ **Minimalist design** (no clutter)
+8. ✓ **Affordable pricing** ($8/month)
 
-**Phase 3 (Month 5+)**
-- [ ] Monthly analytics dashboard
-- [ ] Advanced filters and views
-- [ ] Team sharing (light)
-- [ ] Mobile app optimization
+### Phase 2 (After 1,000 users)
+
+- Optional AI subtask suggestions
+- Natural language parsing
+- Habit tracking with streaks
+- Monthly analytics
+- Mobile optimization
 
 ---
 
-**Key Takeaway**: 
-You're not building Motion. You're not building a better Todoist. **You're building the first app that makes calendar + tasks + goals feel like one integrated system, with AI that helps without taking over.**
+## KEY INSIGHT
 
-The market is *screaming* for this. It doesn't exist yet.
+**You're not building a better Todoist.**
+**You're not building anti-AI Motion.**
+
+**You're building the first app that integrates goals + projects + daily tasks + calendar visibility + completed task motivation into ONE coherent system.**
+
+The market is _screaming_ for this. It doesn't exist yet.
+

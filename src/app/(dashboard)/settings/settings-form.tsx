@@ -113,7 +113,7 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
               <CardDescription>
-                Customize how Dayflow looks and feels.
+                Customize how Aether looks and feels.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

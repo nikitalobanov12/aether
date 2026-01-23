@@ -7,8 +7,8 @@ import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
   title: {
-    default: "Dayflow - Organize Your Goals. Execute Your Day.",
-    template: "%s | Dayflow",
+    default: "Aether - Organize Your Goals. Execute Your Day.",
+    template: "%s | Aether",
   },
   description:
     "The task planner that syncs calendar, tasks, and life goals in one unified system. AI that helps—not decides for you.",
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     "time blocking",
     "daily planner",
   ],
-  authors: [{ name: "Dayflow" }],
-  creator: "Dayflow",
+  authors: [{ name: "Aether" }],
+  creator: "Aether",
   metadataBase: new URL(
     process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -30,14 +30,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    siteName: "Dayflow",
-    title: "Dayflow - Organize Your Goals. Execute Your Day.",
+    siteName: "Aether",
+    title: "Aether - Organize Your Goals. Execute Your Day.",
     description:
       "The task planner that syncs calendar, tasks, and life goals in one unified system. AI that helps—not decides for you.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dayflow - Organize Your Goals. Execute Your Day.",
+    title: "Aether - Organize Your Goals. Execute Your Day.",
     description:
       "The task planner that syncs calendar, tasks, and life goals in one unified system.",
   },

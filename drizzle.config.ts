@@ -8,5 +8,5 @@ export default {
   dbCredentials: {
     url: env.DATABASE_URL,
   },
-  tablesFilter: ["dayflow_*", "user", "session", "account", "verification"],
+  tablesFilter: ["aether_*", "user", "session", "account", "verification"],
 } satisfies Config;

@@ -1,4 +1,4 @@
-# Agent Guidelines for Dayflow Codebase
+# Agent Guidelines for Aether Codebase
 
 ## Git Workflow
 
@@ -267,7 +267,7 @@ export function TaskCard({ task, onUpdate }: TaskCardProps) {
 
 ```typescript
 // Schema: snake_case for DB columns
-export const task = pgTable("dayflow_task", {
+export const task = pgTable("aether_task", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
   createdAt: timestamp("created_at").$defaultFn(() => new Date()),
@@ -285,7 +285,7 @@ export const taskRouter = createTRPCRouter({
 });
 ```
 
-- Table names: `dayflow_` prefix for app tables
+- Table names: `aether_` prefix for app tables
 - Always filter by `userId` for user-owned data
 - Use Drizzle's relational queries with `with:` for joins
 - Validate all inputs with Zod schemas

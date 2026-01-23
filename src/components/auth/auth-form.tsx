@@ -143,10 +143,10 @@ export function AuthForm() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#1a1a2e] to-[#0f0f1a] px-4">
       <div className="mb-8 text-center">
         <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-6xl">
-          <span className="text-[hsl(200,100%,70%)]">Dayflow</span>
+          <span className="text-[hsl(185,60%,49%)]">Aether</span>
         </h1>
         <p className="mt-4 text-xl text-gray-400">
-          AI-powered productivity and task management
+          Organize your goals. Execute your day.
         </p>
       </div>
 
@@ -222,7 +222,7 @@ export function AuthForm() {
               <div className="space-y-2">
                 <h2 className="text-xl font-semibold">Create an account</h2>
                 <p className="text-muted-foreground text-sm">
-                  Get started with Dayflow
+                  Get started with Aether
                 </p>
               </div>
 
