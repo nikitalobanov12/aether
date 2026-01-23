@@ -1,45 +1,36 @@
 <svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- Teal gradient: bottom to top -->
-    <linearGradient id="logoGradient" x1="80" y1="165" x2="80" y2="35" gradientUnits="userSpaceOnUse">
+    <linearGradient id="logoGradient" x1="80" y1="175" x2="80" y2="25" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#2A9EAE"/>
       <stop offset="100%" stop-color="#32B8C6"/>
     </linearGradient>
   </defs>
 
-  <!-- Icon: Three ascending bars with smooth arc connectors -->
-  <g transform="translate(20, 20)">
-    <!-- Left bar -->
-    <rect x="0" y="88" width="24" height="52" rx="12" fill="url(#logoGradient)"/>
-    
-    <!-- Middle bar -->
-    <rect x="51" y="52" width="24" height="88" rx="12" fill="url(#logoGradient)"/>
-    
-    <!-- Right bar -->
-    <rect x="102" y="12" width="24" height="128" rx="12" fill="url(#logoGradient)"/>
-    
-    <!-- Thin arc connector: left to middle -->
-    <path d="
-      M 19 88
-      Q 37 88, 37 70
-      Q 37 52, 51 52
-      L 51 60
-      Q 45 60, 45 70
-      Q 45 88, 24 88
-      Z
-    " fill="url(#logoGradient)"/>
-    
-    <!-- Thin arc connector: middle to right -->
-    <path d="
-      M 70 52
-      Q 88 52, 88 32
-      Q 88 12, 102 12
-      L 102 20
-      Q 96 20, 96 32
-      Q 96 52, 75 52
-      Z
-    " fill="url(#logoGradient)"/>
-  </g>
+  <!-- Geometric A icon -->
+  <path transform="translate(20, 18)" d="
+    M 60 0
+    Q 67 0 71 8
+    L 118 140
+    Q 122 150 115 157
+    Q 108 164 98 164
+    L 82 164
+    Q 73 164 69 155
+    L 62 138
+    L 58 138
+    L 51 155
+    Q 47 164 38 164
+    L 22 164
+    Q 12 164 5 157
+    Q -2 150 2 140
+    L 49 8
+    Q 53 0 60 0
+    Z
+    M 60 55
+    L 48 95
+    L 72 95
+    Z
+  " fill="url(#logoGradient)" fill-rule="evenodd"/>
 
   <!-- Wordmark: "Aether" -->
   <text x="175" y="122" 

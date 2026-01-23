@@ -4,67 +4,35 @@
   
   <defs>
     <!-- Teal gradient: bottom to top -->
-    <linearGradient id="tealGradient" x1="512" y1="760" x2="512" y2="240" gradientUnits="userSpaceOnUse">
+    <linearGradient id="tealGradient" x1="512" y1="820" x2="512" y2="180" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#2A9EAE"/>
       <stop offset="100%" stop-color="#32B8C6"/>
     </linearGradient>
   </defs>
 
-  <!-- Three ascending bars with smooth arc connectors - single unified path -->
+  <!-- Geometric A: clean triangular form with crossbar cutout -->
+  <!-- Outer A shape -->
   <path d="
-    M 240 760
-    L 240 560
-    A 52 52 0 0 1 292 508
-    L 292 508
-    A 52 52 0 0 1 344 560
-    L 344 760
-    A 52 52 0 0 1 292 812
-    L 292 812
-    A 52 52 0 0 1 240 760
+    M 512 180
+    Q 532 180 545 210
+    L 780 750
+    Q 795 780 775 805
+    Q 755 830 720 830
+    L 640 830
+    Q 605 830 590 800
+    L 555 720
+    L 469 720
+    L 434 800
+    Q 419 830 384 830
+    L 304 830
+    Q 269 830 249 805
+    Q 229 780 244 750
+    L 479 210
+    Q 492 180 512 180
     Z
-    
-    M 460 760
-    L 460 400
-    A 52 52 0 0 1 512 348
-    L 512 348
-    A 52 52 0 0 1 564 400
-    L 564 760
-    A 52 52 0 0 1 512 812
-    L 512 812
-    A 52 52 0 0 1 460 760
+    M 512 380
+    L 430 570
+    L 594 570
     Z
-    
-    M 680 760
-    L 680 264
-    A 52 52 0 0 1 732 212
-    L 732 212
-    A 52 52 0 0 1 784 264
-    L 784 760
-    A 52 52 0 0 1 732 812
-    L 732 812
-    A 52 52 0 0 1 680 760
-    Z
-  " fill="url(#tealGradient)"/>
-  
-  <!-- Thin arc connector: left to middle -->
-  <path d="
-    M 320 508
-    Q 390 508, 390 438
-    Q 390 368, 460 368
-    L 460 400
-    Q 422 400, 422 438
-    Q 422 508, 344 508
-    Z
-  " fill="url(#tealGradient)"/>
-  
-  <!-- Thin arc connector: middle to right -->
-  <path d="
-    M 540 348
-    Q 610 348, 610 280
-    Q 610 212, 680 212
-    L 680 244
-    Q 642 244, 642 280
-    Q 642 348, 564 348
-    Z
-  " fill="url(#tealGradient)"/>
+  " fill="url(#tealGradient)" fill-rule="evenodd"/>
 </svg>
