@@ -8,7 +8,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  Kanban,
   Sun,
   CalendarDays,
   ChevronRight,
@@ -50,7 +49,6 @@ const mainNavigation = [
 ];
 
 const secondaryNavigation = [
-  { name: "Boards", href: "/boards", icon: Kanban },
   { name: "Goals", href: "/goals", icon: Target },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Settings", href: "/settings", icon: Settings },

@@ -40,7 +40,7 @@ interface Task {
   priority: "low" | "medium" | "high" | "urgent";
   dueDate: Date | null;
   estimatedMinutes: number | null;
-  boardId: string | null;
+  projectId: string | null;
   goalId: string | null;
   tags: string[] | null;
 }
@@ -49,7 +49,7 @@ interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   task?: Task;
-  boardId?: string;
+  projectId?: string;
   defaultStatus?: "todo" | "in_progress" | "completed";
 }
 
@@ -57,7 +57,7 @@ export function TaskDialog({
   open,
   onOpenChange,
   task,
-  boardId,
+  projectId,
   defaultStatus = "todo",
 }: TaskDialogProps) {
   const isEditing = !!task;
@@ -120,7 +120,7 @@ export function TaskDialog({
         ? parseInt(estimatedMinutes, 10)
         : undefined,
       tags: tags.length > 0 ? tags : undefined,
-      boardId,
+      projectId,
     };
 
     if (isEditing) {
@@ -141,7 +141,7 @@ export function TaskDialog({
             <DialogDescription>
               {isEditing
                 ? "Update the task details below."
-                : "Add a new task to your board."}
+                : "Add a new task to your list."}
             </DialogDescription>
           </DialogHeader>
 

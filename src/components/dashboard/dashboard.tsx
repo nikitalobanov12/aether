@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Kanban, Target, Calendar, Clock } from "lucide-react";
+import { Plus, CheckSquare, Target, Calendar, Clock } from "lucide-react";
 
 import { api } from "~/trpc/server";
 import { Button } from "~/components/ui/button";
@@ -13,8 +13,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 
 export async function Dashboard() {
-  const [boards, tasks, goals] = await Promise.all([
-    api.board.getAll(),
+  const [tasks, goals] = await Promise.all([
     api.task.getAll({ includeCompleted: false }),
     api.goal.getAll({ includeCompleted: false }),
   ]);
@@ -45,6 +44,8 @@ export async function Dashboard() {
     return daysDiff > 0 && daysDiff <= 7;
   });
 
+  const backlogTasks = tasks.filter((task) => !task.dueDate);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -56,7 +57,7 @@ export async function Dashboard() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/boards">
+          <Link href="/today">
             <Plus className="mr-2 h-4 w-4" />
             New Task
           </Link>
@@ -68,7 +69,7 @@ export async function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-            <Kanban className="text-muted-foreground h-4 w-4" />
+            <CheckSquare className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{tasks.length}</div>
@@ -107,12 +108,12 @@ export async function Dashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Boards</CardTitle>
-            <Kanban className="text-muted-foreground h-4 w-4" />
+            <CardTitle className="text-sm font-medium">Backlog</CardTitle>
+            <CheckSquare className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{boards.length}</div>
-            <p className="text-muted-foreground text-xs">Active workspaces</p>
+            <div className="text-2xl font-bold">{backlogTasks.length}</div>
+            <p className="text-muted-foreground text-xs">Unscheduled tasks</p>
           </CardContent>
         </Card>
       </div>
@@ -170,7 +171,7 @@ export async function Dashboard() {
             )}
             <div className="mt-4">
               <Button variant="outline" className="w-full" asChild>
-                <Link href="/boards">View all tasks</Link>
+                <Link href="/today">View today</Link>
               </Button>
             </div>
           </CardContent>
@@ -218,7 +219,7 @@ export async function Dashboard() {
             )}
             <div className="mt-4">
               <Button variant="outline" className="w-full" asChild>
-                <Link href="/calendar">View calendar</Link>
+                <Link href="/week">View week</Link>
               </Button>
             </div>
           </CardContent>
@@ -236,9 +237,9 @@ export async function Dashboard() {
                 className="h-auto flex-col gap-2 p-4"
                 asChild
               >
-                <Link href="/boards">
-                  <Kanban className="h-6 w-6" />
-                  <span>View Boards</span>
+                <Link href="/today">
+                  <CheckSquare className="h-6 w-6" />
+                  <span>Today</span>
                 </Link>
               </Button>
               <Button
@@ -266,9 +267,9 @@ export async function Dashboard() {
                 className="h-auto flex-col gap-2 p-4"
                 asChild
               >
-                <Link href="/settings">
+                <Link href="/week">
                   <Clock className="h-6 w-6" />
-                  <span>Preferences</span>
+                  <span>This Week</span>
                 </Link>
               </Button>
             </div>

@@ -1,6 +1,5 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { postRouter } from "~/server/api/routers/post";
-import { boardRouter } from "~/server/api/routers/board";
 import { taskRouter } from "~/server/api/routers/task";
 import { goalRouter } from "~/server/api/routers/goal";
 import { projectRouter } from "~/server/api/routers/project";
@@ -18,7 +17,6 @@ import { googleCalendarRouter } from "~/server/api/routers/google-calendar";
  */
 export const appRouter = createTRPCRouter({
   post: postRouter,
-  board: boardRouter, // Legacy, deprecated - use project instead
   task: taskRouter,
   goal: goalRouter,
   project: projectRouter,

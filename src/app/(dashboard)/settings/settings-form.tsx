@@ -80,7 +80,6 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
       taskSortBy: preferences.taskSortBy ?? undefined,
       taskSortOrder: preferences.taskSortOrder as "asc" | "desc" | undefined,
       calendarDefaultView: preferences.calendarDefaultView ?? undefined,
-      boardDefaultView: preferences.boardDefaultView ?? undefined,
       autoScheduleEnabled: preferences.autoScheduleEnabled ?? undefined,
       workingHoursStart: preferences.workingHoursStart ?? undefined,
       workingHoursEnd: preferences.workingHoursEnd ?? undefined,
@@ -205,44 +204,26 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
             <CardHeader>
               <CardTitle>Default Views</CardTitle>
               <CardDescription>
-                Set your preferred default views for boards and calendar.
+                Set your preferred default views for the calendar.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="calendarDefaultView">Calendar View</Label>
-                  <Select
-                    value={preferences.calendarDefaultView ?? "3-day"}
-                    onValueChange={(v) => updateField("calendarDefaultView", v)}
-                  >
-                    <SelectTrigger id="calendarDefaultView">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="day">Day</SelectItem>
-                      <SelectItem value="3-day">3 Day</SelectItem>
-                      <SelectItem value="week">Week</SelectItem>
-                      <SelectItem value="month">Month</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="boardDefaultView">Board View</Label>
-                  <Select
-                    value={preferences.boardDefaultView ?? "compact"}
-                    onValueChange={(v) => updateField("boardDefaultView", v)}
-                  >
-                    <SelectTrigger id="boardDefaultView">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="compact">Compact</SelectItem>
-                      <SelectItem value="detailed">Detailed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendarDefaultView">Calendar View</Label>
+                <Select
+                  value={preferences.calendarDefaultView ?? "3-day"}
+                  onValueChange={(v) => updateField("calendarDefaultView", v)}
+                >
+                  <SelectTrigger id="calendarDefaultView">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Day</SelectItem>
+                    <SelectItem value="3-day">3 Day</SelectItem>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
