@@ -12,6 +12,7 @@ import {
   CalendarDays,
   ChevronRight,
   FolderKanban,
+  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -46,6 +47,7 @@ interface SidebarProps {
 const mainNavigation = [
   { name: "Today", href: "/today", icon: Sun },
   { name: "This Week", href: "/week", icon: CalendarDays },
+  { name: "Insights", href: "/insights", icon: BarChart3 },
 ];
 
 const secondaryNavigation = [
