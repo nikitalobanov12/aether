@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { format, isToday, addDays, subDays } from "date-fns";
 import { useKeyboardNavigation } from "~/hooks/use-keyboard-navigation";
+import { useSwipeGesture } from "~/hooks/use-swipe-gesture";
 import {
   ChevronLeft,
   ChevronRight,
@@ -488,117 +489,166 @@ function TaskItem({
     new Date(task.dueDate) < now &&
     !isToday(new Date(task.dueDate));
 
+  // Swipe gesture for mobile
+  const { offset, isSwiping, handlers } = useSwipeGesture({
+    onSwipeRight: () => onComplete(task.id), // Swipe right to complete
+    onSwipeLeft: () => onSnooze(task.id), // Swipe left to snooze
+    threshold: 60,
+  });
+
   return (
     <div
       ref={refCallback}
       className={cn(
-        "group flex items-start gap-3 rounded-lg border p-3 transition-colors",
-        "hover:bg-muted/50",
-        isOverdue && "border-red-500/30 bg-red-500/5",
+        "relative overflow-hidden rounded-lg",
         isSelected && "ring-primary ring-2",
       )}
-      draggable
-      onDragStart={onDragStart}
-      onClick={onSelect}
     >
-      {/* Drag handle */}
-      <div className="text-muted-foreground mt-0.5 cursor-grab opacity-0 transition-opacity group-hover:opacity-100">
-        <GripVertical className="h-5 w-5" />
+      {/* Background action indicators (visible during swipe) */}
+      <div className="absolute inset-0 flex items-stretch">
+        <div
+          className={cn(
+            "flex flex-1 items-center justify-start bg-green-500 pl-4",
+            "text-white transition-opacity",
+            offset > 20 ? "opacity-100" : "opacity-0",
+          )}
+        >
+          <CheckCircle2 className="h-5 w-5" />
+          <span className="ml-2 text-sm font-medium">Complete</span>
+        </div>
+        <div
+          className={cn(
+            "flex flex-1 items-center justify-end bg-amber-500 pr-4",
+            "text-white transition-opacity",
+            offset < -20 ? "opacity-100" : "opacity-0",
+          )}
+        >
+          <span className="mr-2 text-sm font-medium">Snooze</span>
+          <Calendar className="h-5 w-5" />
+        </div>
       </div>
 
-      {/* Checkbox */}
-      <Checkbox
-        checked={task.status === "completed"}
-        onCheckedChange={() => onComplete(task.id)}
-        className="mt-0.5"
-      />
+      {/* Main task content */}
+      <div
+        className={cn(
+          "group bg-background relative flex min-h-[56px] items-start gap-3 border p-3 transition-colors",
+          "touch-pan-y", // Allow vertical scroll but capture horizontal
+          !isSwiping && "rounded-lg", // Only round when not swiping
+          !isSwiping && "hover:bg-muted/50",
+          isOverdue && "border-red-500/30 bg-red-500/5",
+        )}
+        style={{
+          transform: isSwiping ? `translateX(${offset}px)` : undefined,
+          transition: isSwiping ? "none" : "transform 0.2s ease-out",
+        }}
+        draggable
+        onDragStart={onDragStart}
+        onClick={onSelect}
+        {...handlers}
+      >
+        {/* Drag handle - hidden on mobile */}
+        <div className="text-muted-foreground mt-0.5 hidden cursor-grab opacity-0 transition-opacity group-hover:opacity-100 sm:block">
+          <GripVertical className="h-5 w-5" />
+        </div>
 
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p
-              className={cn(
-                "font-medium",
-                task.status === "completed" &&
-                  "text-muted-foreground line-through",
-              )}
-            >
-              {task.title}
-            </p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              {/* Project */}
-              {task.project && (
-                <Badge variant="secondary" className="text-xs">
-                  {task.project.title}
-                </Badge>
-              )}
-              {/* Priority - only show if not medium */}
-              {task.priority !== "medium" && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "text-xs",
-                    task.priority === "urgent" && "border-red-500 text-red-500",
-                    task.priority === "high" &&
-                      "border-orange-500 text-orange-500",
-                    task.priority === "low" && "border-gray-400 text-gray-400",
-                  )}
-                >
-                  {task.priority}
-                </Badge>
-              )}
-              {/* Overdue badge */}
-              {isOverdue && (
-                <Badge variant="destructive" className="text-xs">
-                  Overdue
-                </Badge>
-              )}
-              {/* Scheduled time */}
-              {task.scheduledStart && (
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Clock className="h-3 w-3" />
-                  {format(new Date(task.scheduledStart), "h:mm a")}
-                </span>
-              )}
-              {/* Estimated time */}
-              {task.estimatedMinutes && (
-                <span className="text-muted-foreground text-xs">
-                  ~{task.estimatedMinutes}m
-                </span>
-              )}
+        {/* Checkbox - larger touch target */}
+        <div className="flex min-h-[28px] min-w-[28px] items-center justify-center">
+          <Checkbox
+            checked={task.status === "completed"}
+            onCheckedChange={() => onComplete(task.id)}
+            className="h-5 w-5"
+          />
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "font-medium",
+                  task.status === "completed" &&
+                    "text-muted-foreground line-through",
+                )}
+              >
+                {task.title}
+              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                {/* Project */}
+                {task.project && (
+                  <Badge variant="secondary" className="text-xs">
+                    {task.project.title}
+                  </Badge>
+                )}
+                {/* Priority - only show if not medium */}
+                {task.priority !== "medium" && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-xs",
+                      task.priority === "urgent" &&
+                        "border-red-500 text-red-500",
+                      task.priority === "high" &&
+                        "border-orange-500 text-orange-500",
+                      task.priority === "low" &&
+                        "border-gray-400 text-gray-400",
+                    )}
+                  >
+                    {task.priority}
+                  </Badge>
+                )}
+                {/* Overdue badge */}
+                {isOverdue && (
+                  <Badge variant="destructive" className="text-xs">
+                    Overdue
+                  </Badge>
+                )}
+                {/* Scheduled time */}
+                {task.scheduledStart && (
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <Clock className="h-3 w-3" />
+                    {format(new Date(task.scheduledStart), "h:mm a")}
+                  </span>
+                )}
+                {/* Estimated time */}
+                {task.estimatedMinutes && (
+                  <span className="text-muted-foreground text-xs">
+                    ~{task.estimatedMinutes}m
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onComplete(task.id)}>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Complete
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSnooze(task.id)}>
-                <Calendar className="mr-2 h-4 w-4" />
-                Snooze to tomorrow
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete(task.id)}
-                className="text-destructive"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            {/* Actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onComplete(task.id)}>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Complete
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onSnooze(task.id)}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Snooze to tomorrow
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(task.id)}
+                  className="text-destructive"
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
