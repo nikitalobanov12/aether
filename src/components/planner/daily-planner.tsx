@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { format, isToday, addDays, subDays } from "date-fns";
+import { useKeyboardNavigation } from "~/hooks/use-keyboard-navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -263,6 +264,29 @@ export function DailyPlanner({
   const goToNextDay = () => setSelectedDate((d) => addDays(d, 1));
   const goToToday = () => setSelectedDate(new Date());
 
+  // Task IDs for keyboard navigation
+  const taskIds = useMemo(() => sortedTasks.map((t) => t.id), [sortedTasks]);
+
+  // Track refs for scrolling selected items into view
+  const taskRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Keyboard navigation
+  const { selectedId, isSelected, setSelectedId } = useKeyboardNavigation({
+    items: taskIds,
+    enabled: !isAddingTask,
+    onComplete: handleComplete,
+    onDelete: handleDelete,
+    onAdd: () => setIsAddingTask(true),
+  });
+
+  // Scroll selected task into view
+  useEffect(() => {
+    if (selectedId) {
+      const element = taskRefs.current.get(selectedId);
+      element?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [selectedId]);
+
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col">
       {/* Header */}
@@ -375,10 +399,19 @@ export function DailyPlanner({
                 <TaskItem
                   key={task.id}
                   task={task}
+                  isSelected={isSelected(task.id)}
                   onComplete={handleComplete}
                   onSnooze={handleSnooze}
                   onDelete={handleDelete}
                   onDragStart={(e) => handleDragStart(e, task.id, "today")}
+                  onSelect={() => setSelectedId(task.id)}
+                  refCallback={(el) => {
+                    if (el) {
+                      taskRefs.current.set(task.id, el);
+                    } else {
+                      taskRefs.current.delete(task.id);
+                    }
+                  }}
                 />
               ))
             )}
@@ -429,18 +462,24 @@ export function DailyPlanner({
 // Task item component for today's tasks
 interface TaskItemProps {
   task: TodayTask;
+  isSelected?: boolean;
   onComplete: (id: string) => void;
   onSnooze: (id: string) => void;
   onDelete: (id: string) => void;
   onDragStart: (e: React.DragEvent) => void;
+  onSelect?: () => void;
+  refCallback?: (el: HTMLDivElement | null) => void;
 }
 
 function TaskItem({
   task,
+  isSelected,
   onComplete,
   onSnooze,
   onDelete,
   onDragStart,
+  onSelect,
+  refCallback,
 }: TaskItemProps) {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -451,13 +490,16 @@ function TaskItem({
 
   return (
     <div
+      ref={refCallback}
       className={cn(
         "group flex items-start gap-3 rounded-lg border p-3 transition-colors",
         "hover:bg-muted/50",
         isOverdue && "border-red-500/30 bg-red-500/5",
+        isSelected && "ring-primary ring-2",
       )}
       draggable
       onDragStart={onDragStart}
+      onClick={onSelect}
     >
       {/* Drag handle */}
       <div className="text-muted-foreground mt-0.5 cursor-grab opacity-0 transition-opacity group-hover:opacity-100">
