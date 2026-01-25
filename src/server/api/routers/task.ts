@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, desc, asc, gte, lte, or, isNull } from "drizzle-orm";
+import { eq, and, desc, asc, gte, lte, or, isNull, inArray } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { task, completedTask, habitStreak } from "~/server/db/schema";
@@ -55,9 +55,7 @@ export const taskRouter = createTRPCRouter({
       }
 
       if (!input?.includeCompleted) {
-        filters.push(
-          or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
-        );
+        filters.push(inArray(task.status, ["todo", "in_progress"]));
       }
 
       if (!input?.includeArchived) {
@@ -115,7 +113,7 @@ export const taskRouter = createTRPCRouter({
       const filters = [
         eq(task.userId, ctx.session.user.id),
         eq(task.archived, false),
-        or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+        inArray(task.status, ["todo", "in_progress"]),
       ];
 
       // Get tasks due on this day or scheduled on this day
@@ -187,7 +185,7 @@ export const taskRouter = createTRPCRouter({
         where: and(
           eq(task.userId, ctx.session.user.id),
           eq(task.archived, false),
-          or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+          inArray(task.status, ["todo", "in_progress"]),
           isNull(task.dueDate),
           isNull(task.scheduledStart),
         ),
@@ -225,7 +223,7 @@ export const taskRouter = createTRPCRouter({
       const filters = [
         eq(task.userId, ctx.session.user.id),
         eq(task.archived, false),
-        or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+        inArray(task.status, ["todo", "in_progress"]),
       ];
 
       // Get tasks due this week or scheduled this week
@@ -264,7 +262,7 @@ export const taskRouter = createTRPCRouter({
           where: and(
             eq(task.userId, ctx.session.user.id),
             eq(task.archived, false),
-            or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+            inArray(task.status, ["todo", "in_progress"]),
             lte(task.dueDate, weekStart),
           ),
           orderBy: [asc(task.dueDate), desc(task.priority)],
@@ -333,7 +331,7 @@ export const taskRouter = createTRPCRouter({
       const filters = [
         eq(task.userId, ctx.session.user.id),
         eq(task.archived, false),
-        or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+        inArray(task.status, ["todo", "in_progress"]),
       ];
 
       if (input?.projectId) {
@@ -434,7 +432,7 @@ export const taskRouter = createTRPCRouter({
           where: and(
             ...baseFilters,
             isNull(task.scheduledStart),
-            or(eq(task.status, "todo"), eq(task.status, "in_progress")),
+            inArray(task.status, ["todo", "in_progress"]),
           ),
           orderBy: [
             desc(task.priority),
