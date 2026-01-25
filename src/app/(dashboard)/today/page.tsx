@@ -1,20 +1,17 @@
+import { format } from "date-fns";
+
 import { api, HydrateClient } from "~/trpc/server";
 import { DailyPlanner } from "~/components/planner/daily-planner";
 
 export default async function TodayPage() {
-  // Get today's date range
+  // Get today's date string in YYYY-MM-DD format
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateString = format(today, "yyyy-MM-dd");
 
   // Prefetch data in parallel
-  const [tasks, timeBlocks, historyData] = await Promise.all([
-    api.task.getToday({ includeOverdue: true }),
-    api.timeBlock.getByDateRange({
-      startDate: today.toISOString(),
-      endDate: tomorrow.toISOString(),
-    }),
+  const [tasks, backlog, historyData] = await Promise.all([
+    api.task.getToday({ dateString, includeOverdue: true }),
+    api.task.getBacklog(),
     api.history.getToday(),
   ]);
 
@@ -22,7 +19,7 @@ export default async function TodayPage() {
     <HydrateClient>
       <DailyPlanner
         initialTasks={tasks}
-        initialTimeBlocks={timeBlocks}
+        initialBacklog={backlog}
         initialCompletedCount={historyData.count}
       />
     </HydrateClient>
