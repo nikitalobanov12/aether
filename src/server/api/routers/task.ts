@@ -82,15 +82,35 @@ export const taskRouter = createTRPCRouter({
     .input(
       z
         .object({
+          // Accept explicit date string (YYYY-MM-DD) to avoid timezone issues
+          // Client sends their local date, server uses it directly
+          dateString: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
           includeOverdue: z.boolean().optional().default(true),
         })
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // If client provides a date string (YYYY-MM-DD), use it to define day boundaries
+      // This avoids timezone issues where client's "today" differs from server's "today"
+      let dayStart: Date;
+      let dayEnd: Date;
+
+      if (input?.dateString) {
+        // Parse as UTC midnight, then create a 24-hour window
+        // The date string represents the user's local calendar day
+        dayStart = new Date(input.dateString + "T00:00:00.000Z");
+        dayEnd = new Date(input.dateString + "T23:59:59.999Z");
+      } else {
+        // Fallback: use server time (less accurate for different timezones)
+        dayStart = new Date();
+        dayStart.setHours(0, 0, 0, 0);
+        dayEnd = new Date(dayStart);
+        dayEnd.setDate(dayEnd.getDate() + 1);
+        dayEnd.setMilliseconds(dayEnd.getMilliseconds() - 1);
+      }
 
       const filters = [
         eq(task.userId, ctx.session.user.id),
@@ -98,20 +118,20 @@ export const taskRouter = createTRPCRouter({
         or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
       ];
 
-      // Get tasks due today or scheduled today
+      // Get tasks due on this day or scheduled on this day
       const todayFilter = or(
-        // Due today
-        and(gte(task.dueDate, today), lte(task.dueDate, tomorrow)),
-        // Scheduled today
+        // Due on this day (using inclusive range)
+        and(gte(task.dueDate, dayStart), lte(task.dueDate, dayEnd)),
+        // Scheduled on this day
         and(
-          gte(task.scheduledStart, today),
-          lte(task.scheduledStart, tomorrow),
+          gte(task.scheduledStart, dayStart),
+          lte(task.scheduledStart, dayEnd),
         ),
       );
 
-      // Optionally include overdue tasks
+      // Optionally include overdue tasks (due before today)
       const dateFilter = input?.includeOverdue
-        ? or(todayFilter, lte(task.dueDate, today))
+        ? or(todayFilter, lte(task.dueDate, dayStart))
         : todayFilter;
 
       filters.push(dateFilter!);
@@ -151,6 +171,153 @@ export const taskRouter = createTRPCRouter({
         ...t,
         isNextUp: nextUpByProject.get(t.projectId ?? "no-project") === t.id,
       }));
+    }),
+
+  // Get backlog tasks (no due date, not scheduled)
+  getBacklog: protectedProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(100).optional().default(50),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const tasks = await ctx.db.query.task.findMany({
+        where: and(
+          eq(task.userId, ctx.session.user.id),
+          eq(task.archived, false),
+          or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+          isNull(task.dueDate),
+          isNull(task.scheduledStart),
+        ),
+        orderBy: [desc(task.priority), asc(task.createdAt)],
+        limit: input?.limit ?? 50,
+        with: {
+          project: {
+            with: {
+              goal: true,
+            },
+          },
+          goal: true,
+          subtasks: true,
+        },
+      });
+
+      return tasks;
+    }),
+
+  // Get tasks for a week (grouped by day)
+  getThisWeek: protectedProcedure
+    .input(
+      z.object({
+        // Week start date in YYYY-MM-DD format (typically Monday or Sunday)
+        weekStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        includeOverdue: z.boolean().optional().default(true),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const weekStart = new Date(input.weekStartDate + "T00:00:00.000Z");
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      weekEnd.setMilliseconds(weekEnd.getMilliseconds() - 1);
+
+      const filters = [
+        eq(task.userId, ctx.session.user.id),
+        eq(task.archived, false),
+        or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+      ];
+
+      // Get tasks due this week or scheduled this week
+      const weekFilter = or(
+        and(gte(task.dueDate, weekStart), lte(task.dueDate, weekEnd)),
+        and(
+          gte(task.scheduledStart, weekStart),
+          lte(task.scheduledStart, weekEnd),
+        ),
+      );
+
+      filters.push(weekFilter!);
+
+      const tasks = await ctx.db.query.task.findMany({
+        where: and(...filters),
+        orderBy: [
+          asc(task.dueDate),
+          asc(task.scheduledStart),
+          desc(task.priority),
+        ],
+        with: {
+          project: {
+            with: {
+              goal: true,
+            },
+          },
+          goal: true,
+          subtasks: true,
+        },
+      });
+
+      // Get overdue tasks if requested
+      let overdueTasks: typeof tasks = [];
+      if (input.includeOverdue) {
+        overdueTasks = await ctx.db.query.task.findMany({
+          where: and(
+            eq(task.userId, ctx.session.user.id),
+            eq(task.archived, false),
+            or(eq(task.status, "todo"), eq(task.status, "in_progress"))!,
+            lte(task.dueDate, weekStart),
+          ),
+          orderBy: [asc(task.dueDate), desc(task.priority)],
+          with: {
+            project: {
+              with: {
+                goal: true,
+              },
+            },
+            goal: true,
+            subtasks: true,
+          },
+        });
+      }
+
+      // Group tasks by day of week
+      const dayNames = [
+        "sunday",
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+      ] as const;
+      const tasksByDay: Record<string, typeof tasks> = {
+        sunday: [],
+        monday: [],
+        tuesday: [],
+        wednesday: [],
+        thursday: [],
+        friday: [],
+        saturday: [],
+      };
+
+      tasks.forEach((t) => {
+        // Use dueDate or scheduledStart to determine the day
+        const taskDate = t.dueDate ?? t.scheduledStart;
+        if (taskDate) {
+          const dayIndex = taskDate.getUTCDay();
+          const dayName = dayNames[dayIndex];
+          if (dayName && tasksByDay[dayName]) {
+            tasksByDay[dayName].push(t);
+          }
+        }
+      });
+
+      return {
+        tasksByDay,
+        overdue: overdueTasks,
+        weekStart: weekStart.toISOString(),
+        weekEnd: weekEnd.toISOString(),
+      };
     }),
 
   // Get the "Next Up" task for each project
@@ -523,6 +690,40 @@ export const taskRouter = createTRPCRouter({
       return updatedTask;
     }),
 
+  // Uncomplete a task (undo completion)
+  uncomplete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Update the task status back to todo
+      const [updatedTask] = await ctx.db
+        .update(task)
+        .set({
+          status: "todo",
+          completedAt: null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id)))
+        .returning();
+
+      // Delete the most recent completion record for this task
+      // (We don't need to undo habit streaks as that would be complex)
+      const recentCompletion = await ctx.db.query.completedTask.findFirst({
+        where: and(
+          eq(completedTask.taskId, input.id),
+          eq(completedTask.userId, ctx.session.user.id),
+        ),
+        orderBy: [desc(completedTask.completedAt)],
+      });
+
+      if (recentCompletion) {
+        await ctx.db
+          .delete(completedTask)
+          .where(eq(completedTask.id, recentCompletion.id));
+      }
+
+      return updatedTask;
+    }),
+
   // Schedule a task to a time slot
   schedule: protectedProcedure
     .input(
@@ -574,6 +775,31 @@ export const taskRouter = createTRPCRouter({
         .set({
           scheduledStart: null,
           scheduledEnd: null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id)))
+        .returning();
+
+      return updated;
+    }),
+
+  // Add task to a specific day (for moving from backlog to today/week)
+  addToDay: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        // Date in YYYY-MM-DD format
+        dateString: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Set due date to end of the specified day (UTC)
+      const dueDate = new Date(input.dateString + "T23:59:59.999Z");
+
+      const [updated] = await ctx.db
+        .update(task)
+        .set({
+          dueDate,
           updatedAt: new Date(),
         })
         .where(and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id)))
