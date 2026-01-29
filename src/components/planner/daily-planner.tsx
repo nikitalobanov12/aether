@@ -69,19 +69,20 @@ export function DailyPlanner({
   }, [selectedDate]);
 
   // Fetch tasks for selected day
-  const { data: tasks = initialTasks, refetch: refetchTasks } =
-    api.task.getToday.useQuery(
-      { dateString, includeOverdue: true },
-      {
-        initialData: isViewingToday ? initialTasks : undefined,
-      },
-    );
+  const { data: tasks = initialTasks } = api.task.getToday.useQuery(
+    { dateString, includeOverdue: true },
+    {
+      initialData: isViewingToday ? initialTasks : undefined,
+    },
+  );
 
   // Fetch backlog tasks
-  const { data: backlogTasks = initialBacklog, refetch: refetchBacklog } =
-    api.task.getBacklog.useQuery(undefined, {
+  const { data: backlogTasks = initialBacklog } = api.task.getBacklog.useQuery(
+    undefined,
+    {
       initialData: initialBacklog,
-    });
+    },
+  );
 
   // Fetch completed count for today
   const { data: historyData } = api.history.getToday.useQuery(undefined, {
@@ -98,8 +99,34 @@ export function DailyPlanner({
   const utils = api.useUtils();
 
   const completeMutation = api.task.complete.useMutation({
+    onMutate: async ({ id }) => {
+      // Cancel outgoing refetches
+      await utils.task.getToday.cancel();
+
+      // Snapshot the previous value
+      const previousTasks = utils.task.getToday.getData({
+        dateString,
+        includeOverdue: true,
+      });
+
+      // Optimistically remove the task from the list (it's completed)
+      utils.task.getToday.setData({ dateString, includeOverdue: true }, (old) =>
+        old?.filter((t) => t.id !== id),
+      );
+
+      return { previousTasks };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousTasks) {
+        utils.task.getToday.setData(
+          { dateString, includeOverdue: true },
+          context.previousTasks,
+        );
+      }
+      toast.error("Failed to complete task");
+    },
     onSuccess: (completedTask) => {
-      void refetchTasks();
       void utils.history.getToday.invalidate();
 
       // Show undo toast
@@ -114,44 +141,228 @@ export function DailyPlanner({
         });
       }
     },
+    onSettled: () => {
+      // Refetch to ensure consistency
+      void utils.task.getToday.invalidate();
+    },
   });
 
   const uncompleteMutation = api.task.uncomplete.useMutation({
     onSuccess: () => {
-      void refetchTasks();
+      void utils.task.getToday.invalidate();
       void utils.history.getToday.invalidate();
       toast.info("Task restored");
     },
   });
 
   const snoozeMutation = api.task.snooze.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.task.getToday.cancel();
+
+      const previousTasks = utils.task.getToday.getData({
+        dateString,
+        includeOverdue: true,
+      });
+
+      // Optimistically remove the task (it's snoozed to tomorrow)
+      utils.task.getToday.setData({ dateString, includeOverdue: true }, (old) =>
+        old?.filter((t) => t.id !== id),
+      );
+
+      return { previousTasks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        utils.task.getToday.setData(
+          { dateString, includeOverdue: true },
+          context.previousTasks,
+        );
+      }
+      toast.error("Failed to snooze task");
+    },
     onSuccess: () => {
-      void refetchTasks();
       toast.info("Task snoozed to tomorrow");
+    },
+    onSettled: () => {
+      void utils.task.getToday.invalidate();
     },
   });
 
   const deleteMutation = api.task.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await Promise.all([
+        utils.task.getToday.cancel(),
+        utils.task.getBacklog.cancel(),
+      ]);
+
+      const previousTasks = utils.task.getToday.getData({
+        dateString,
+        includeOverdue: true,
+      });
+      const previousBacklog = utils.task.getBacklog.getData();
+
+      // Optimistically remove from both lists
+      utils.task.getToday.setData({ dateString, includeOverdue: true }, (old) =>
+        old?.filter((t) => t.id !== id),
+      );
+      utils.task.getBacklog.setData(undefined, (old) =>
+        old?.filter((t) => t.id !== id),
+      );
+
+      return { previousTasks, previousBacklog };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        utils.task.getToday.setData(
+          { dateString, includeOverdue: true },
+          context.previousTasks,
+        );
+      }
+      if (context?.previousBacklog) {
+        utils.task.getBacklog.setData(undefined, context.previousBacklog);
+      }
+      toast.error("Failed to delete task");
+    },
     onSuccess: () => {
-      void refetchTasks();
-      void refetchBacklog();
       toast.success("Task deleted");
+    },
+    onSettled: () => {
+      void utils.task.getToday.invalidate();
+      void utils.task.getBacklog.invalidate();
     },
   });
 
   const createTaskMutation = api.task.create.useMutation({
+    onMutate: async (newTaskInput) => {
+      await utils.task.getToday.cancel();
+
+      const previousTasks = utils.task.getToday.getData({
+        dateString,
+        includeOverdue: true,
+      });
+
+      // Create an optimistic task with all required fields
+      const optimisticTask: TodayTask = {
+        id: `temp-${Date.now()}`,
+        title: newTaskInput.title,
+        description: null,
+        status: "todo",
+        priority: newTaskInput.priority ?? "medium",
+        dueDate: newTaskInput.dueDateString
+          ? new Date(newTaskInput.dueDateString + "T23:59:59.999Z")
+          : null,
+        scheduledStart: null,
+        scheduledEnd: null,
+        estimatedMinutes: null,
+        actualMinutes: null,
+        tags: null,
+        boardId: null,
+        projectId: null,
+        goalId: null,
+        parentTaskId: null,
+        habitName: null,
+        sortOrder: 0,
+        nextUpOrder: null,
+        archived: false,
+        completedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: "",
+        project: null,
+        goal: null,
+        subtasks: [],
+        isNextUp: false,
+        // Google sync fields
+        isRecurring: false,
+        recurrenceRule: null,
+        googleEventId: null,
+        googleCalendarId: null,
+        googleTasksId: null,
+        googleTasksListId: null,
+        lastSyncedAt: null,
+      };
+
+      // Add to the list
+      utils.task.getToday.setData(
+        { dateString, includeOverdue: true },
+        (old) => (old ? [optimisticTask, ...old] : [optimisticTask]),
+      );
+
+      return { previousTasks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        utils.task.getToday.setData(
+          { dateString, includeOverdue: true },
+          context.previousTasks,
+        );
+      }
+      toast.error("Failed to create task");
+    },
     onSuccess: () => {
-      void refetchTasks();
       setNewTaskTitle("");
       setIsAddingTask(false);
+      toast.success("Task added");
+    },
+    onSettled: () => {
+      void utils.task.getToday.invalidate();
     },
   });
 
   const addToDayMutation = api.task.addToDay.useMutation({
+    onMutate: async ({ id }) => {
+      await Promise.all([
+        utils.task.getToday.cancel(),
+        utils.task.getBacklog.cancel(),
+      ]);
+
+      const previousTasks = utils.task.getToday.getData({
+        dateString,
+        includeOverdue: true,
+      });
+      const previousBacklog = utils.task.getBacklog.getData();
+
+      // Find the task in backlog
+      const taskToMove = previousBacklog?.find((t) => t.id === id);
+
+      if (taskToMove) {
+        // Remove from backlog
+        utils.task.getBacklog.setData(undefined, (old) =>
+          old?.filter((t) => t.id !== id),
+        );
+
+        // Add to today's tasks with updated due date
+        const movedTask: TodayTask = {
+          ...taskToMove,
+          dueDate: new Date(dateString + "T23:59:59.999Z"),
+          isNextUp: false,
+        };
+        utils.task.getToday.setData(
+          { dateString, includeOverdue: true },
+          (old) => (old ? [...old, movedTask] : [movedTask]),
+        );
+      }
+
+      return { previousTasks, previousBacklog };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        utils.task.getToday.setData(
+          { dateString, includeOverdue: true },
+          context.previousTasks,
+        );
+      }
+      if (context?.previousBacklog) {
+        utils.task.getBacklog.setData(undefined, context.previousBacklog);
+      }
+      toast.error("Failed to add task to today");
+    },
     onSuccess: () => {
-      void refetchTasks();
-      void refetchBacklog();
       toast.success("Task added to today");
+    },
+    onSettled: () => {
+      void utils.task.getToday.invalidate();
+      void utils.task.getBacklog.invalidate();
     },
   });
 
@@ -203,16 +414,14 @@ export function DailyPlanner({
   const handleQuickAdd = useCallback(() => {
     if (!newTaskTitle.trim()) return;
 
-    // Set due date to end of selected day
-    const dueDate = new Date(selectedDate);
-    dueDate.setHours(23, 59, 59, 999);
-
+    // Use dateString directly - server will set dueDate to end of day (UTC)
+    // This avoids timezone issues where local end-of-day converts to wrong UTC day
     createTaskMutation.mutate({
       title: newTaskTitle.trim(),
-      dueDate: dueDate.toISOString(),
+      dueDateString: dateString,
       priority: "medium",
     });
-  }, [newTaskTitle, selectedDate, createTaskMutation]);
+  }, [newTaskTitle, dateString, createTaskMutation]);
 
   // Handle keyboard submit for quick add
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -464,6 +464,12 @@ export const taskRouter = createTRPCRouter({
         goalId: z.string().uuid().optional(),
         priority: taskPrioritySchema.optional().default("medium"),
         status: taskStatusSchema.optional().default("todo"),
+        // Prefer dueDateString (YYYY-MM-DD) over dueDate to avoid timezone issues
+        // When dueDateString is provided, we set dueDate to end of that day (UTC)
+        dueDateString: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional(),
         dueDate: z.string().datetime().optional(),
         scheduledStart: z.string().datetime().optional(),
         scheduledEnd: z.string().datetime().optional(),
@@ -480,6 +486,15 @@ export const taskRouter = createTRPCRouter({
           (Date.now() % 1000)
         : null;
 
+      // Determine due date: prefer dueDateString (timezone-safe) over dueDate
+      let dueDate: Date | undefined;
+      if (input.dueDateString) {
+        // Set to end of the specified day (UTC) - consistent with addToDay
+        dueDate = new Date(input.dueDateString + "T23:59:59.999Z");
+      } else if (input.dueDate) {
+        dueDate = new Date(input.dueDate);
+      }
+
       const [newTask] = await ctx.db
         .insert(task)
         .values({
@@ -491,7 +506,7 @@ export const taskRouter = createTRPCRouter({
           goalId: input.goalId,
           priority: input.priority,
           status: input.status,
-          dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+          dueDate,
           scheduledStart: input.scheduledStart
             ? new Date(input.scheduledStart)
             : undefined,
