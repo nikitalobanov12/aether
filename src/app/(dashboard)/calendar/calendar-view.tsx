@@ -8,10 +8,15 @@ import {
   Plus,
   ExternalLink,
   Calendar,
+  Trash2,
+  Pencil,
+  MapPin,
+  ListTodo,
 } from "lucide-react";
 import {
   format,
   addDays,
+  subDays,
   startOfWeek,
   addWeeks,
   subWeeks,
@@ -32,16 +37,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Separator } from "~/components/ui/separator";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { toast } from "~/components/ui/sonner";
+import { useSwipeGesture } from "~/hooks/use-swipe-gesture";
 import type { RouterOutputs } from "~/trpc/react";
 
 // Time grid constants
 const HOUR_HEIGHT = 60; // pixels per hour
+const HOUR_HEIGHT_MOBILE = 50; // smaller on mobile
 const START_HOUR = 6; // 6 AM
 const END_HOUR = 22; // 10 PM
 const TOTAL_HOURS = END_HOUR - START_HOUR;
@@ -58,6 +74,12 @@ type GoogleCalendarEvent = {
   location: string | null;
   htmlLink: string | null;
 };
+
+// Types for event detail sheet
+type SelectedEvent =
+  | { type: "timeBlock"; data: TimeBlock }
+  | { type: "task"; data: Task }
+  | { type: "googleEvent"; data: GoogleCalendarEvent };
 
 interface CalendarViewProps {
   initialTimeBlocks: TimeBlock[];
@@ -79,6 +101,19 @@ export function CalendarView({
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+
+  // Event detail sheet state
+  const [selectedEvent, setSelectedEvent] = useState<SelectedEvent | null>(
+    null,
+  );
+  const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Mobile state - track center date for 3-day view
+  const [mobileCenterDate, setMobileCenterDate] = useState(new Date());
+
+  // Mobile unscheduled tasks sheet
+  const [isUnscheduledSheetOpen, setIsUnscheduledSheetOpen] = useState(false);
 
   const weekStart = useMemo(
     () => startOfWeek(currentDate, { weekStartsOn: 0 }),
@@ -187,19 +222,23 @@ export function CalendarView({
   const syncToGoogleMutation =
     api.googleCalendar.syncTaskToGoogle.useMutation();
 
-  // These mutations are prepared for the edit/delete UI to be added
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _updateTimeBlock = api.timeBlock.update.useMutation({
+  // Time block update mutation
+  const updateTimeBlock = api.timeBlock.update.useMutation({
     onSuccess: () => {
       void refetchBlocks();
+      toast.success("Time block updated");
+      setIsEditMode(false);
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _deleteTimeBlock = api.timeBlock.delete.useMutation({
+  // Time block delete mutation
+  const deleteTimeBlock = api.timeBlock.delete.useMutation({
     onSuccess: () => {
       void refetchBlocks();
       void refetchTasks();
+      toast.success("Time block deleted");
+      setIsEventSheetOpen(false);
+      setSelectedEvent(null);
     },
   });
 
@@ -207,10 +246,50 @@ export function CalendarView({
   const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
   const handleToday = () => setCurrentDate(new Date());
 
+  // Mobile navigation
+  const handlePreviousDays = () =>
+    setMobileCenterDate(subDays(mobileCenterDate, 3));
+  const handleNextDays = () =>
+    setMobileCenterDate(addDays(mobileCenterDate, 3));
+  const handleMobileToday = () => setMobileCenterDate(new Date());
+
+  // Swipe gesture for mobile calendar navigation
+  const { handlers: swipeHandlers } = useSwipeGesture({
+    onSwipeLeft: handleNextDays,
+    onSwipeRight: handlePreviousDays,
+    threshold: 50,
+  });
+
   const handleSlotClick = (date: Date, hour: number) => {
     setSelectedSlot({ date, hour });
     setIsDialogOpen(true);
   };
+
+  // Event click handlers
+  const handleTimeBlockClick = (block: TimeBlock) => {
+    setSelectedEvent({ type: "timeBlock", data: block });
+    setIsEditMode(false);
+    setIsEventSheetOpen(true);
+  };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedEvent({ type: "task", data: task });
+    setIsEditMode(false);
+    setIsEventSheetOpen(true);
+  };
+
+  const handleGoogleEventClick = (event: GoogleCalendarEvent) => {
+    setSelectedEvent({ type: "googleEvent", data: event });
+    setIsEditMode(false);
+    setIsEventSheetOpen(true);
+  };
+
+  const handleCloseEventSheet = useCallback(() => {
+    setIsEventSheetOpen(false);
+    setIsEditMode(false);
+    // Delay clearing selectedEvent to allow animation
+    setTimeout(() => setSelectedEvent(null), 300);
+  }, []);
 
   // Handle quick task creation
   const handleQuickAdd = useCallback(() => {
@@ -297,10 +376,20 @@ export function CalendarView({
     );
   }, [tasksData.unscheduled]);
 
+  // Mobile 3-day view days
+  const mobileDays = useMemo(
+    () => [
+      subDays(mobileCenterDate, 1),
+      mobileCenterDate,
+      addDays(mobileCenterDate, 1),
+    ],
+    [mobileCenterDate],
+  );
+
   return (
     <div className="flex h-full flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - Desktop */}
+      <div className="hidden items-center justify-between md:flex">
         <div>
           <h1 className="text-3xl font-bold">Calendar</h1>
           <p className="text-muted-foreground">
@@ -321,9 +410,46 @@ export function CalendarView({
         </div>
       </div>
 
+      {/* Header - Mobile */}
+      <div className="flex items-center justify-between md:hidden">
+        <div>
+          <h1 className="text-xl font-bold">Calendar</h1>
+          <p className="text-muted-foreground text-sm">
+            {format(mobileDays[0]!, "MMM d")} -{" "}
+            {format(mobileDays[2]!, "MMM d")}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handlePreviousDays}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-2 text-xs"
+            onClick={handleMobileToday}
+          >
+            Today
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleNextDays}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       <div className="flex flex-1 gap-4 overflow-hidden">
-        {/* Main calendar grid */}
-        <Card className="flex-1 overflow-hidden">
+        {/* Main calendar grid - Desktop (7-day week view) */}
+        <Card className="hidden flex-1 overflow-hidden md:block">
           <ScrollArea className="h-full">
             <div className="min-w-[800px]">
               {/* Day headers */}
@@ -369,24 +495,15 @@ export function CalendarView({
                         className="flex flex-wrap gap-1 border-l p-1"
                       >
                         {dayEvents.map((event) => (
-                          <div
+                          <button
                             key={`allday-${event.id}`}
-                            className="flex items-center gap-1 rounded-full border border-purple-300/50 bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-300"
+                            className="flex items-center gap-1 rounded-full border border-purple-300/50 bg-purple-100 px-2 py-0.5 text-xs text-purple-700 transition-colors hover:bg-purple-200 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
+                            onClick={() => handleGoogleEventClick(event)}
                           >
                             <span className="max-w-[80px] truncate">
                               {event.title}
                             </span>
-                            {event.htmlLink && (
-                              <a
-                                href={event.htmlLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-purple-500 hover:text-purple-700"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     );
@@ -414,189 +531,124 @@ export function CalendarView({
 
                 {/* Day columns */}
                 {weekDays.map((day) => (
+                  <DayColumn
+                    key={day.toISOString()}
+                    day={day}
+                    hourHeight={HOUR_HEIGHT}
+                    blocks={getBlocksForDay(day)}
+                    scheduledTasks={getScheduledTasksForDay(day)}
+                    googleEvents={getGoogleEventsForDay(day)}
+                    draggedTaskId={draggedTaskId}
+                    onSlotClick={handleSlotClick}
+                    onDrop={handleDrop}
+                    onTimeBlockClick={handleTimeBlockClick}
+                    onTaskClick={handleTaskClick}
+                    onGoogleEventClick={handleGoogleEventClick}
+                  />
+                ))}
+              </div>
+            </div>
+          </ScrollArea>
+        </Card>
+
+        {/* Main calendar grid - Mobile (3-day view) */}
+        <Card className="flex-1 overflow-hidden md:hidden" {...swipeHandlers}>
+          <ScrollArea className="h-full">
+            <div>
+              {/* Day headers */}
+              <div className="bg-background sticky top-0 z-10 grid grid-cols-[40px_repeat(3,1fr)] border-b">
+                <div className="p-1" /> {/* Time column header */}
+                {mobileDays.map((day) => (
                   <div
                     key={day.toISOString()}
                     className={cn(
-                      "relative border-l",
+                      "border-l p-1.5 text-center",
                       isToday(day) && "bg-primary/5",
                     )}
-                    style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
                   >
-                    {/* Hour lines with drag-drop support */}
-                    {Array.from({ length: TOTAL_HOURS }, (_, i) => (
-                      <div
-                        key={i}
-                        className={cn(
-                          "border-muted absolute inset-x-0 cursor-pointer border-b border-dashed transition-colors",
-                          draggedTaskId && "hover:bg-primary/10",
-                        )}
-                        style={{
-                          top: i * HOUR_HEIGHT,
-                          height: HOUR_HEIGHT,
-                        }}
-                        onClick={() => handleSlotClick(day, START_HOUR + i)}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = "move";
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          handleDrop(day, START_HOUR + i);
-                        }}
-                      />
-                    ))}
-
-                    {/* Time blocks */}
-                    {getBlocksForDay(day).map((block) => {
-                      const blockStart = new Date(block.startTime);
-                      const blockEnd = new Date(block.endTime);
-                      const startMinutes =
-                        (blockStart.getHours() - START_HOUR) * 60 +
-                        blockStart.getMinutes();
-                      const durationMinutes = differenceInMinutes(
-                        blockEnd,
-                        blockStart,
-                      );
-                      const top = (startMinutes / 60) * HOUR_HEIGHT;
-                      const height = (durationMinutes / 60) * HOUR_HEIGHT;
-
-                      return (
-                        <div
-                          key={block.id}
-                          className={cn(
-                            "absolute inset-x-1 cursor-pointer overflow-hidden rounded-md p-1 text-xs transition-opacity hover:opacity-90",
-                            block.isCompleted && "opacity-60",
-                          )}
-                          style={{
-                            top: Math.max(0, top),
-                            height: Math.max(20, height),
-                            backgroundColor: block.color ?? "#3b82f6",
-                          }}
-                          onClick={() => {
-                            // Could open edit dialog here
-                          }}
-                        >
-                          <div className="truncate font-medium text-white">
-                            {block.title}
-                          </div>
-                          {height > 30 && (
-                            <div className="truncate text-white/80">
-                              {format(blockStart, "h:mm a")} -{" "}
-                              {format(blockEnd, "h:mm a")}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Google Calendar events */}
-                    {getGoogleEventsForDay(day).map((event) => {
-                      const eventStart = new Date(event.startTime);
-                      const eventEnd = new Date(event.endTime);
-                      const startMinutes =
-                        (eventStart.getHours() - START_HOUR) * 60 +
-                        eventStart.getMinutes();
-                      const durationMinutes = differenceInMinutes(
-                        eventEnd,
-                        eventStart,
-                      );
-                      const top = (startMinutes / 60) * HOUR_HEIGHT;
-                      const height = (durationMinutes / 60) * HOUR_HEIGHT;
-
-                      return (
-                        <div
-                          key={`google-${event.id}`}
-                          className="absolute inset-x-1 overflow-hidden rounded-md border border-dashed border-purple-400/50 bg-purple-500/10 p-1 text-xs"
-                          style={{
-                            top: Math.max(0, top),
-                            height: Math.max(20, height),
-                          }}
-                        >
-                          <div className="flex items-start justify-between gap-1">
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate font-medium text-purple-700 dark:text-purple-300">
-                                {event.title}
-                              </div>
-                              {height > 30 && (
-                                <div className="truncate text-purple-600/70 dark:text-purple-400/70">
-                                  {format(eventStart, "h:mm a")} -{" "}
-                                  {format(eventEnd, "h:mm a")}
-                                </div>
-                              )}
-                              {height > 50 && event.location && (
-                                <div className="mt-0.5 truncate text-purple-600/50 dark:text-purple-400/50">
-                                  {event.location}
-                                </div>
-                              )}
-                            </div>
-                            {event.htmlLink && (
-                              <a
-                                href={event.htmlLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-purple-500 opacity-50 transition-opacity hover:opacity-100"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Scheduled tasks (not in time blocks) */}
-                    {getScheduledTasksForDay(day).map((task) => {
-                      if (!task.scheduledStart) return null;
-                      const taskStart = new Date(task.scheduledStart);
-                      const taskEnd = task.scheduledEnd
-                        ? new Date(task.scheduledEnd)
-                        : new Date(
-                            taskStart.getTime() +
-                              (task.estimatedMinutes ?? 60) * 60 * 1000,
-                          );
-                      const startMinutes =
-                        (taskStart.getHours() - START_HOUR) * 60 +
-                        taskStart.getMinutes();
-                      const durationMinutes = differenceInMinutes(
-                        taskEnd,
-                        taskStart,
-                      );
-                      const top = (startMinutes / 60) * HOUR_HEIGHT;
-                      const height = (durationMinutes / 60) * HOUR_HEIGHT;
-
-                      const priorityColors = {
-                        urgent: "#ef4444",
-                        high: "#f97316",
-                        medium: "#eab308",
-                        low: "#3b82f6",
-                      };
-
-                      return (
-                        <div
-                          key={task.id}
-                          className="bg-card absolute inset-x-1 overflow-hidden rounded-md border-l-4 p-1 text-xs shadow-sm"
-                          style={{
-                            top: Math.max(0, top),
-                            height: Math.max(20, height),
-                            borderLeftColor:
-                              priorityColors[task.priority] ?? "#3b82f6",
-                          }}
-                        >
-                          <div className="truncate font-medium">
-                            {task.title}
-                          </div>
-                          {height > 30 && (
-                            <div className="text-muted-foreground truncate">
-                              {format(taskStart, "h:mm a")}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {/* Current time indicator */}
-                    {isToday(day) && <CurrentTimeIndicator />}
+                    <div className="text-muted-foreground text-xs font-medium">
+                      {format(day, "EEE")}
+                    </div>
+                    <div
+                      className={cn(
+                        "text-base font-semibold",
+                        isToday(day) &&
+                          "bg-primary text-primary-foreground mx-auto flex h-7 w-7 items-center justify-center rounded-full text-sm",
+                      )}
+                    >
+                      {format(day, "d")}
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              {/* All-day Google Calendar events - Mobile */}
+              {allDayGoogleEvents.filter((e) =>
+                mobileDays.some((d) => isSameDay(new Date(e.startTime), d)),
+              ).length > 0 && (
+                <div className="bg-background sticky top-[56px] z-10 grid grid-cols-[40px_repeat(3,1fr)] border-b bg-purple-50 dark:bg-purple-950/20">
+                  <div className="flex items-center justify-center p-1">
+                    <Calendar className="h-3 w-3 text-purple-500" />
+                  </div>
+                  {mobileDays.map((day) => {
+                    const dayEvents = allDayGoogleEvents.filter((event) =>
+                      isSameDay(new Date(event.startTime), day),
+                    );
+                    return (
+                      <div
+                        key={`allday-mobile-${day.toISOString()}`}
+                        className="flex flex-wrap gap-0.5 border-l p-0.5"
+                      >
+                        {dayEvents.map((event) => (
+                          <button
+                            key={`allday-mobile-${event.id}`}
+                            className="w-full truncate rounded border border-purple-300/50 bg-purple-100 px-1 py-0.5 text-left text-[10px] text-purple-700 dark:border-purple-700/50 dark:bg-purple-900/30 dark:text-purple-300"
+                            onClick={() => handleGoogleEventClick(event)}
+                          >
+                            {event.title}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Time grid - Mobile */}
+              <div className="grid grid-cols-[40px_repeat(3,1fr)]">
+                {/* Time labels */}
+                <div className="relative">
+                  {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="text-muted-foreground absolute right-1 -translate-y-1/2 text-[10px]"
+                      style={{ top: i * HOUR_HEIGHT_MOBILE }}
+                    >
+                      {format(
+                        setHours(setMinutes(new Date(), 0), START_HOUR + i),
+                        "ha",
+                      ).toLowerCase()}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Day columns - Mobile */}
+                {mobileDays.map((day) => (
+                  <DayColumn
+                    key={`mobile-${day.toISOString()}`}
+                    day={day}
+                    hourHeight={HOUR_HEIGHT_MOBILE}
+                    blocks={getBlocksForDay(day)}
+                    scheduledTasks={getScheduledTasksForDay(day)}
+                    googleEvents={getGoogleEventsForDay(day)}
+                    draggedTaskId={draggedTaskId}
+                    onSlotClick={handleSlotClick}
+                    onDrop={handleDrop}
+                    onTimeBlockClick={handleTimeBlockClick}
+                    onTaskClick={handleTaskClick}
+                    onGoogleEventClick={handleGoogleEventClick}
+                    isMobile
+                  />
                 ))}
               </div>
             </div>
@@ -733,14 +785,174 @@ export function CalendarView({
           />
         </DialogContent>
       </Dialog>
+
+      {/* Event Detail Sheet */}
+      <Sheet
+        open={isEventSheetOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCloseEventSheet();
+          else setIsEventSheetOpen(true);
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-md">
+          {selectedEvent && (
+            <EventDetailContent
+              event={selectedEvent}
+              isEditMode={isEditMode}
+              onEdit={() => setIsEditMode(true)}
+              onCancelEdit={() => setIsEditMode(false)}
+              onUpdate={(data) => {
+                if (selectedEvent.type === "timeBlock") {
+                  updateTimeBlock.mutate({
+                    id: selectedEvent.data.id,
+                    ...data,
+                  });
+                }
+              }}
+              onDelete={() => {
+                if (selectedEvent.type === "timeBlock") {
+                  deleteTimeBlock.mutate({ id: selectedEvent.data.id });
+                }
+              }}
+              isUpdating={updateTimeBlock.isPending}
+              isDeleting={deleteTimeBlock.isPending}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* Mobile: Floating Action Button for unscheduled tasks */}
+      <Button
+        className="fixed right-6 bottom-6 h-14 w-14 rounded-full shadow-lg md:hidden"
+        size="icon"
+        onClick={() => setIsUnscheduledSheetOpen(true)}
+      >
+        <ListTodo className="h-6 w-6" />
+      </Button>
+
+      {/* Mobile: Unscheduled Tasks Bottom Sheet */}
+      <Sheet
+        open={isUnscheduledSheetOpen}
+        onOpenChange={setIsUnscheduledSheetOpen}
+      >
+        <SheetContent side="bottom" className="h-[70vh] rounded-t-xl">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Unscheduled Tasks ({unscheduledTasks.length})
+            </SheetTitle>
+            <SheetDescription>
+              Drag tasks to the calendar to schedule them
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-2">
+            {/* Quick Add Task */}
+            <div className="mb-4">
+              {isAddingTask ? (
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder="What needs to be done?"
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    autoFocus
+                    disabled={createTaskMutation.isPending}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleQuickAdd}
+                      disabled={
+                        !newTaskTitle.trim() || createTaskMutation.isPending
+                      }
+                    >
+                      {createTaskMutation.isPending ? "Adding..." : "Add Task"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setIsAddingTask(false);
+                        setNewTaskTitle("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="text-muted-foreground w-full justify-start"
+                  onClick={() => setIsAddingTask(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add a task
+                </Button>
+              )}
+            </div>
+          </div>
+          <ScrollArea className="h-[calc(100%-120px)]">
+            {unscheduledTasks.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">
+                All tasks are scheduled!
+              </p>
+            ) : (
+              <div className="space-y-2 pr-4">
+                {unscheduledTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="hover:bg-muted/50 rounded-lg border p-3 transition-colors"
+                  >
+                    <div className="font-medium">{task.title}</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs",
+                          task.priority === "urgent" &&
+                            "border-red-500 text-red-500",
+                          task.priority === "high" &&
+                            "border-orange-500 text-orange-500",
+                          task.priority === "medium" &&
+                            "border-yellow-500 text-yellow-500",
+                          task.priority === "low" &&
+                            "border-blue-500 text-blue-500",
+                        )}
+                      >
+                        {task.priority}
+                      </Badge>
+                      {task.dueDate && (
+                        <span className="text-muted-foreground text-xs">
+                          Due {format(new Date(task.dueDate), "MMM d")}
+                        </span>
+                      )}
+                      {task.estimatedMinutes && (
+                        <span className="text-muted-foreground text-xs">
+                          ~{task.estimatedMinutes}m
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
 
-function CurrentTimeIndicator() {
+function CurrentTimeIndicator({
+  hourHeight = HOUR_HEIGHT,
+}: {
+  hourHeight?: number;
+}) {
   const now = new Date();
   const minutes = (now.getHours() - START_HOUR) * 60 + now.getMinutes();
-  const top = (minutes / 60) * HOUR_HEIGHT;
+  const top = (minutes / 60) * hourHeight;
 
   if (now.getHours() < START_HOUR || now.getHours() >= END_HOUR) {
     return null;
@@ -752,6 +964,577 @@ function CurrentTimeIndicator() {
       <div className="flex-1 border-t-2 border-red-500" />
     </div>
   );
+}
+
+// DayColumn component for rendering a single day's events
+interface DayColumnProps {
+  day: Date;
+  hourHeight: number;
+  blocks: TimeBlock[];
+  scheduledTasks: Task[];
+  googleEvents: GoogleCalendarEvent[];
+  draggedTaskId: string | null;
+  onSlotClick: (date: Date, hour: number) => void;
+  onDrop: (day: Date, hour: number) => void;
+  onTimeBlockClick: (block: TimeBlock) => void;
+  onTaskClick: (task: Task) => void;
+  onGoogleEventClick: (event: GoogleCalendarEvent) => void;
+  isMobile?: boolean;
+}
+
+function DayColumn({
+  day,
+  hourHeight,
+  blocks,
+  scheduledTasks,
+  googleEvents,
+  draggedTaskId,
+  onSlotClick,
+  onDrop,
+  onTimeBlockClick,
+  onTaskClick,
+  onGoogleEventClick,
+  isMobile = false,
+}: DayColumnProps) {
+  return (
+    <div
+      className={cn("relative border-l", isToday(day) && "bg-primary/5")}
+      style={{ height: TOTAL_HOURS * hourHeight }}
+    >
+      {/* Hour lines with drag-drop support */}
+      {Array.from({ length: TOTAL_HOURS }, (_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "border-muted absolute inset-x-0 cursor-pointer border-b border-dashed transition-colors",
+            draggedTaskId && "hover:bg-primary/10",
+          )}
+          style={{
+            top: i * hourHeight,
+            height: hourHeight,
+          }}
+          onClick={() => onSlotClick(day, START_HOUR + i)}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            onDrop(day, START_HOUR + i);
+          }}
+        />
+      ))}
+
+      {/* Time blocks */}
+      {blocks.map((block) => {
+        const blockStart = new Date(block.startTime);
+        const blockEnd = new Date(block.endTime);
+        const startMinutes =
+          (blockStart.getHours() - START_HOUR) * 60 + blockStart.getMinutes();
+        const durationMinutes = differenceInMinutes(blockEnd, blockStart);
+        const top = (startMinutes / 60) * hourHeight;
+        const height = (durationMinutes / 60) * hourHeight;
+
+        return (
+          <button
+            key={block.id}
+            className={cn(
+              "absolute inset-x-0.5 cursor-pointer overflow-hidden rounded-md p-1 text-left transition-opacity hover:opacity-90",
+              isMobile ? "text-[10px]" : "text-xs",
+              block.isCompleted && "opacity-60",
+            )}
+            style={{
+              top: Math.max(0, top),
+              height: Math.max(isMobile ? 18 : 20, height),
+              backgroundColor: block.color ?? "#3b82f6",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTimeBlockClick(block);
+            }}
+          >
+            <div className="truncate font-medium text-white">{block.title}</div>
+            {height > (isMobile ? 25 : 30) && (
+              <div className="truncate text-white/80">
+                {format(blockStart, "h:mm a")}
+              </div>
+            )}
+          </button>
+        );
+      })}
+
+      {/* Google Calendar events */}
+      {googleEvents.map((event) => {
+        const eventStart = new Date(event.startTime);
+        const eventEnd = new Date(event.endTime);
+        const startMinutes =
+          (eventStart.getHours() - START_HOUR) * 60 + eventStart.getMinutes();
+        const durationMinutes = differenceInMinutes(eventEnd, eventStart);
+        const top = (startMinutes / 60) * hourHeight;
+        const height = (durationMinutes / 60) * hourHeight;
+
+        return (
+          <button
+            key={`google-${event.id}`}
+            className={cn(
+              "absolute inset-x-0.5 cursor-pointer overflow-hidden rounded-md border border-dashed border-purple-400/50 bg-purple-500/10 p-1 text-left transition-colors hover:bg-purple-500/20",
+              isMobile ? "text-[10px]" : "text-xs",
+            )}
+            style={{
+              top: Math.max(0, top),
+              height: Math.max(isMobile ? 18 : 20, height),
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onGoogleEventClick(event);
+            }}
+          >
+            <div className="truncate font-medium text-purple-700 dark:text-purple-300">
+              {event.title}
+            </div>
+            {height > (isMobile ? 25 : 30) && (
+              <div className="truncate text-purple-600/70 dark:text-purple-400/70">
+                {format(eventStart, "h:mm a")}
+              </div>
+            )}
+          </button>
+        );
+      })}
+
+      {/* Scheduled tasks (not in time blocks) */}
+      {scheduledTasks.map((task) => {
+        if (!task.scheduledStart) return null;
+        const taskStart = new Date(task.scheduledStart);
+        const taskEnd = task.scheduledEnd
+          ? new Date(task.scheduledEnd)
+          : new Date(
+              taskStart.getTime() + (task.estimatedMinutes ?? 60) * 60 * 1000,
+            );
+        const startMinutes =
+          (taskStart.getHours() - START_HOUR) * 60 + taskStart.getMinutes();
+        const durationMinutes = differenceInMinutes(taskEnd, taskStart);
+        const top = (startMinutes / 60) * hourHeight;
+        const height = (durationMinutes / 60) * hourHeight;
+
+        const priorityColors = {
+          urgent: "#ef4444",
+          high: "#f97316",
+          medium: "#eab308",
+          low: "#3b82f6",
+        };
+
+        return (
+          <button
+            key={task.id}
+            className={cn(
+              "bg-card hover:bg-muted/50 absolute inset-x-0.5 cursor-pointer overflow-hidden rounded-md border-l-4 p-1 text-left shadow-sm transition-colors",
+              isMobile ? "text-[10px]" : "text-xs",
+            )}
+            style={{
+              top: Math.max(0, top),
+              height: Math.max(isMobile ? 18 : 20, height),
+              borderLeftColor: priorityColors[task.priority] ?? "#3b82f6",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onTaskClick(task);
+            }}
+          >
+            <div className="truncate font-medium">{task.title}</div>
+            {height > (isMobile ? 25 : 30) && (
+              <div className="text-muted-foreground truncate">
+                {format(taskStart, "h:mm a")}
+              </div>
+            )}
+          </button>
+        );
+      })}
+
+      {/* Current time indicator */}
+      {isToday(day) && <CurrentTimeIndicator hourHeight={hourHeight} />}
+    </div>
+  );
+}
+
+// Event Detail Content component
+interface EventDetailContentProps {
+  event: SelectedEvent;
+  isEditMode: boolean;
+  onEdit: () => void;
+  onCancelEdit: () => void;
+  onUpdate: (data: {
+    title?: string;
+    startTime?: string;
+    endTime?: string;
+    color?: string;
+    notes?: string;
+  }) => void;
+  onDelete: () => void;
+  isUpdating: boolean;
+  isDeleting: boolean;
+}
+
+function EventDetailContent({
+  event,
+  isEditMode,
+  onEdit,
+  onCancelEdit,
+  onUpdate,
+  onDelete,
+  isUpdating,
+  isDeleting,
+}: EventDetailContentProps) {
+  // Edit form state for time blocks
+  const [editTitle, setEditTitle] = useState(
+    event.type === "timeBlock" ? event.data.title : "",
+  );
+  const [editStartTime, setEditStartTime] = useState(
+    event.type === "timeBlock"
+      ? format(new Date(event.data.startTime), "yyyy-MM-dd'T'HH:mm")
+      : "",
+  );
+  const [editEndTime, setEditEndTime] = useState(
+    event.type === "timeBlock"
+      ? format(new Date(event.data.endTime), "yyyy-MM-dd'T'HH:mm")
+      : "",
+  );
+  const [editColor, setEditColor] = useState(
+    event.type === "timeBlock" ? (event.data.color ?? "#3b82f6") : "#3b82f6",
+  );
+  const [editNotes, setEditNotes] = useState(
+    event.type === "timeBlock" ? (event.data.notes ?? "") : "",
+  );
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleSave = () => {
+    onUpdate({
+      title: editTitle,
+      startTime: new Date(editStartTime).toISOString(),
+      endTime: new Date(editEndTime).toISOString(),
+      color: editColor,
+      notes: editNotes || undefined,
+    });
+  };
+
+  if (event.type === "timeBlock") {
+    const block = event.data;
+    const startTime = new Date(block.startTime);
+    const endTime = new Date(block.endTime);
+
+    return (
+      <>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <div
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: block.color ?? "#3b82f6" }}
+            />
+            {isEditMode ? "Edit Time Block" : block.title}
+          </SheetTitle>
+          <SheetDescription>
+            {format(startTime, "EEEE, MMMM d, yyyy")}
+          </SheetDescription>
+        </SheetHeader>
+
+        {isEditMode ? (
+          <div className="mt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-start">Start</Label>
+                <Input
+                  id="edit-start"
+                  type="datetime-local"
+                  value={editStartTime}
+                  onChange={(e) => setEditStartTime(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-end">End</Label>
+                <Input
+                  id="edit-end"
+                  type="datetime-local"
+                  value={editEndTime}
+                  onChange={(e) => setEditEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Color</Label>
+              <div className="flex gap-2">
+                {[
+                  "#3b82f6",
+                  "#ef4444",
+                  "#22c55e",
+                  "#f97316",
+                  "#8b5cf6",
+                  "#ec4899",
+                ].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={cn(
+                      "h-8 w-8 rounded-full border-2 transition-all",
+                      editColor === c
+                        ? "border-foreground scale-110"
+                        : "border-transparent",
+                    )}
+                    style={{ backgroundColor: c }}
+                    onClick={() => setEditColor(c)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-notes">Notes</Label>
+              <Textarea
+                id="edit-notes"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                onClick={handleSave}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button variant="outline" onClick={onCancelEdit}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="text-muted-foreground h-4 w-4" />
+              <span>
+                {format(startTime, "h:mm a")} - {format(endTime, "h:mm a")}
+              </span>
+              <span className="text-muted-foreground">
+                ({differenceInMinutes(endTime, startTime)} min)
+              </span>
+            </div>
+
+            {block.notes && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
+                    Notes
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap">{block.notes}</p>
+                </div>
+              </>
+            )}
+
+            <Separator />
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={onEdit}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+              {showDeleteConfirm ? (
+                <div className="flex flex-1 gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="flex-1"
+                    onClick={onDelete}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? "..." : "Confirm"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDeleteConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (event.type === "task") {
+    const task = event.data;
+    const taskStart = task.scheduledStart
+      ? new Date(task.scheduledStart)
+      : null;
+    const taskEnd = task.scheduledEnd ? new Date(task.scheduledEnd) : null;
+
+    const priorityColors = {
+      urgent: "text-red-500 border-red-500",
+      high: "text-orange-500 border-orange-500",
+      medium: "text-yellow-500 border-yellow-500",
+      low: "text-blue-500 border-blue-500",
+    };
+
+    return (
+      <>
+        <SheetHeader>
+          <SheetTitle>{task.title}</SheetTitle>
+          <SheetDescription>Scheduled Task</SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant="outline"
+              className={cn("capitalize", priorityColors[task.priority])}
+            >
+              {task.priority}
+            </Badge>
+            <Badge variant="secondary" className="capitalize">
+              {task.status}
+            </Badge>
+          </div>
+
+          {taskStart && (
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="text-muted-foreground h-4 w-4" />
+              <span>
+                {format(taskStart, "h:mm a")}
+                {taskEnd && ` - ${format(taskEnd, "h:mm a")}`}
+              </span>
+            </div>
+          )}
+
+          {task.dueDate && (
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="text-muted-foreground h-4 w-4" />
+              <span>Due {format(new Date(task.dueDate), "MMMM d, yyyy")}</span>
+            </div>
+          )}
+
+          {task.estimatedMinutes && (
+            <div className="text-muted-foreground text-sm">
+              Estimated: {task.estimatedMinutes} minutes
+            </div>
+          )}
+
+          {task.description && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
+                  Description
+                </p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {task.description}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  if (event.type === "googleEvent") {
+    const gEvent = event.data;
+    const eventStart = new Date(gEvent.startTime);
+    const eventEnd = new Date(gEvent.endTime);
+
+    return (
+      <>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-full bg-purple-500" />
+            {gEvent.title}
+          </SheetTitle>
+          <SheetDescription>
+            Google Calendar Event
+            {gEvent.allDay && " (All day)"}
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 space-y-4">
+          {!gEvent.allDay && (
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="text-muted-foreground h-4 w-4" />
+              <span>
+                {format(eventStart, "h:mm a")} - {format(eventEnd, "h:mm a")}
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="text-muted-foreground h-4 w-4" />
+            <span>{format(eventStart, "EEEE, MMMM d, yyyy")}</span>
+          </div>
+
+          {gEvent.location && (
+            <div className="flex items-center gap-2 text-sm">
+              <MapPin className="text-muted-foreground h-4 w-4" />
+              <span>{gEvent.location}</span>
+            </div>
+          )}
+
+          {gEvent.description && (
+            <>
+              <Separator />
+              <div>
+                <p className="text-muted-foreground mb-1 text-xs font-medium uppercase">
+                  Description
+                </p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {gEvent.description}
+                </p>
+              </div>
+            </>
+          )}
+
+          {gEvent.htmlLink && (
+            <>
+              <Separator />
+              <Button asChild variant="outline" className="w-full">
+                <a
+                  href={gEvent.htmlLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open in Google Calendar
+                </a>
+              </Button>
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  return null;
 }
 
 interface CreateTimeBlockFormProps {
