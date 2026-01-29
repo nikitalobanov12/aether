@@ -70,18 +70,68 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
   }, [weekStart]);
 
   // Fetch week tasks
-  const { data: weekData = initialData, refetch: refetchWeek } =
-    api.task.getThisWeek.useQuery(
-      { weekStartDate, includeOverdue: true },
-      { initialData },
-    );
+  const { data: weekData = initialData } = api.task.getThisWeek.useQuery(
+    { weekStartDate, includeOverdue: true },
+    { initialData },
+  );
 
   // Mutations
   const utils = api.useUtils();
 
+  // Helper to remove task from week data optimistically
+  const removeTaskFromWeekData = (
+    taskId: string,
+    data: WeekTasks | undefined,
+  ): WeekTasks | undefined => {
+    if (!data) return data;
+    return {
+      ...data,
+      overdue: data.overdue.filter((t) => t.id !== taskId),
+      tasksByDay: {
+        sunday: (data.tasksByDay.sunday ?? []).filter((t) => t.id !== taskId),
+        monday: (data.tasksByDay.monday ?? []).filter((t) => t.id !== taskId),
+        tuesday: (data.tasksByDay.tuesday ?? []).filter((t) => t.id !== taskId),
+        wednesday: (data.tasksByDay.wednesday ?? []).filter(
+          (t) => t.id !== taskId,
+        ),
+        thursday: (data.tasksByDay.thursday ?? []).filter(
+          (t) => t.id !== taskId,
+        ),
+        friday: (data.tasksByDay.friday ?? []).filter((t) => t.id !== taskId),
+        saturday: (data.tasksByDay.saturday ?? []).filter(
+          (t) => t.id !== taskId,
+        ),
+      },
+    };
+  };
+
   const completeMutation = api.task.complete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.task.getThisWeek.cancel();
+
+      const previousData = utils.task.getThisWeek.getData({
+        weekStartDate,
+        includeOverdue: true,
+      });
+
+      // Optimistically remove the task
+      utils.task.getThisWeek.setData(
+        { weekStartDate, includeOverdue: true },
+        (old) => removeTaskFromWeekData(id, old),
+      );
+
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousData) {
+        utils.task.getThisWeek.setData(
+          { weekStartDate, includeOverdue: true },
+          context.previousData,
+        );
+      }
+      toast.error("Failed to complete task");
+    },
     onSuccess: (completedTask) => {
-      void refetchWeek();
       void utils.task.getToday.invalidate();
 
       if (completedTask) {
@@ -95,27 +145,84 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
         });
       }
     },
+    onSettled: () => {
+      void utils.task.getThisWeek.invalidate();
+    },
   });
 
   const uncompleteMutation = api.task.uncomplete.useMutation({
     onSuccess: () => {
-      void refetchWeek();
+      void utils.task.getThisWeek.invalidate();
       void utils.task.getToday.invalidate();
       toast.info("Task restored");
     },
   });
 
   const snoozeMutation = api.task.snooze.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.task.getThisWeek.cancel();
+
+      const previousData = utils.task.getThisWeek.getData({
+        weekStartDate,
+        includeOverdue: true,
+      });
+
+      // Optimistically remove the task (it moves to tomorrow)
+      utils.task.getThisWeek.setData(
+        { weekStartDate, includeOverdue: true },
+        (old) => removeTaskFromWeekData(id, old),
+      );
+
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousData) {
+        utils.task.getThisWeek.setData(
+          { weekStartDate, includeOverdue: true },
+          context.previousData,
+        );
+      }
+      toast.error("Failed to snooze task");
+    },
     onSuccess: () => {
-      void refetchWeek();
       toast.info("Task snoozed");
+    },
+    onSettled: () => {
+      void utils.task.getThisWeek.invalidate();
     },
   });
 
   const deleteMutation = api.task.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.task.getThisWeek.cancel();
+
+      const previousData = utils.task.getThisWeek.getData({
+        weekStartDate,
+        includeOverdue: true,
+      });
+
+      // Optimistically remove the task
+      utils.task.getThisWeek.setData(
+        { weekStartDate, includeOverdue: true },
+        (old) => removeTaskFromWeekData(id, old),
+      );
+
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousData) {
+        utils.task.getThisWeek.setData(
+          { weekStartDate, includeOverdue: true },
+          context.previousData,
+        );
+      }
+      toast.error("Failed to delete task");
+    },
     onSuccess: () => {
-      void refetchWeek();
       toast.success("Task deleted");
+    },
+    onSettled: () => {
+      void utils.task.getThisWeek.invalidate();
     },
   });
 

@@ -50,9 +50,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
+import { toast } from "~/components/ui/sonner";
+import type { RouterOutputs } from "~/trpc/react";
 
 // Teal accent color
 const TEAL_ACCENT = "#32B8C6";
+
+type Goal = RouterOutputs["goal"]["getAll"][number];
 
 export function GoalsList() {
   const [createGoalOpen, setCreateGoalOpen] = useState(false);
@@ -71,33 +75,164 @@ export function GoalsList() {
   });
 
   const createGoal = api.goal.create.useMutation({
+    onMutate: async (newGoal) => {
+      await utils.goal.getAll.cancel();
+      const previousGoals = utils.goal.getAll.getData({
+        includeCompleted: true,
+      });
+
+      // Create optimistic goal with minimal required display fields
+      const optimisticGoal = {
+        id: `temp-${Date.now()}`,
+        title: newGoal.title,
+        description: newGoal.description ?? null,
+        status: "not_started",
+        projects: [],
+        calculatedProgress: 0,
+        projectCount: 0,
+        totalTaskCount: 0,
+        completedTaskCount: 0,
+      } as unknown as Goal;
+
+      utils.goal.getAll.setData({ includeCompleted: true }, (old) =>
+        old ? [optimisticGoal, ...old] : [optimisticGoal],
+      );
+
+      return { previousGoals };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousGoals) {
+        utils.goal.getAll.setData(
+          { includeCompleted: true },
+          context.previousGoals,
+        );
+      }
+      toast.error("Failed to create goal");
+    },
     onSuccess: () => {
-      void utils.goal.getAll.invalidate();
+      toast.success("Goal created");
       setCreateGoalOpen(false);
       setNewGoalTitle("");
       setNewGoalDescription("");
     },
+    onSettled: () => {
+      void utils.goal.getAll.invalidate();
+    },
   });
 
   const updateGoal = api.goal.update.useMutation({
+    onMutate: async ({ id, status }) => {
+      await utils.goal.getAll.cancel();
+      const previousGoals = utils.goal.getAll.getData({
+        includeCompleted: true,
+      });
+
+      // Optimistically update goal status
+      utils.goal.getAll.setData({ includeCompleted: true }, (old) =>
+        old?.map((g) =>
+          g.id === id ? { ...g, status: status ?? g.status } : g,
+        ),
+      );
+
+      return { previousGoals };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousGoals) {
+        utils.goal.getAll.setData(
+          { includeCompleted: true },
+          context.previousGoals,
+        );
+      }
+      toast.error("Failed to update goal");
+    },
     onSuccess: () => {
+      toast.success("Goal updated");
+    },
+    onSettled: () => {
       void utils.goal.getAll.invalidate();
     },
   });
 
   const deleteGoal = api.goal.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.goal.getAll.cancel();
+      const previousGoals = utils.goal.getAll.getData({
+        includeCompleted: true,
+      });
+
+      // Optimistically remove goal
+      utils.goal.getAll.setData({ includeCompleted: true }, (old) =>
+        old?.filter((g) => g.id !== id),
+      );
+
+      return { previousGoals };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousGoals) {
+        utils.goal.getAll.setData(
+          { includeCompleted: true },
+          context.previousGoals,
+        );
+      }
+      toast.error("Failed to delete goal");
+    },
     onSuccess: () => {
+      toast.success("Goal deleted");
+    },
+    onSettled: () => {
       void utils.goal.getAll.invalidate();
     },
   });
 
   const createProject = api.project.create.useMutation({
+    onMutate: async (newProject) => {
+      await utils.goal.getAll.cancel();
+      const previousGoals = utils.goal.getAll.getData({
+        includeCompleted: true,
+      });
+
+      // Create optimistic project with minimal required display fields
+      const optimisticProject = {
+        id: `temp-${Date.now()}`,
+        title: newProject.title,
+        description: newProject.description ?? null,
+        color: "#6b7280",
+        tasks: [],
+      } as unknown as Goal["projects"][number];
+
+      // Add project to goal
+      utils.goal.getAll.setData({ includeCompleted: true }, (old) =>
+        old?.map((g) =>
+          g.id === newProject.goalId
+            ? {
+                ...g,
+                projects: [...g.projects, optimisticProject],
+                projectCount: g.projectCount + 1,
+              }
+            : g,
+        ),
+      );
+
+      return { previousGoals };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousGoals) {
+        utils.goal.getAll.setData(
+          { includeCompleted: true },
+          context.previousGoals,
+        );
+      }
+      toast.error("Failed to create project");
+    },
     onSuccess: () => {
-      void utils.goal.getAll.invalidate();
+      toast.success("Project created");
       setCreateProjectOpen(false);
       setNewProjectTitle("");
       setNewProjectDescription("");
       setSelectedGoalId(null);
+    },
+    onSettled: () => {
+      void utils.goal.getAll.invalidate();
     },
   });
 

@@ -47,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { toast } from "~/components/ui/sonner";
 import type { RouterOutputs } from "~/trpc/react";
 
 // Teal accent color
@@ -68,7 +69,7 @@ export function ProjectView({ initialProject }: ProjectViewProps) {
 
   const utils = api.useUtils();
 
-  const { data: projectData, refetch } = api.project.getById.useQuery(
+  const { data: projectData } = api.project.getById.useQuery(
     { id: initialProject.id },
     { initialData: initialProject },
   );
@@ -77,33 +78,226 @@ export function ProjectView({ initialProject }: ProjectViewProps) {
   const project = projectData ?? initialProject;
 
   const createTask = api.task.create.useMutation({
+    onMutate: async (newTask) => {
+      await utils.project.getById.cancel();
+      const previousProject = utils.project.getById.getData({
+        id: initialProject.id,
+      });
+
+      // Create optimistic task
+      const optimisticTask = {
+        id: `temp-${Date.now()}`,
+        title: newTask.title,
+        description: newTask.description ?? null,
+        status: "todo" as const,
+        priority: newTask.priority ?? ("medium" as const),
+        dueDate: newTask.dueDate ? new Date(newTask.dueDate) : null,
+        scheduledStart: null,
+        scheduledEnd: null,
+        estimatedMinutes: newTask.estimatedMinutes ?? null,
+        projectId: newTask.projectId ?? null,
+        goalId: newTask.goalId ?? null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Task;
+
+      utils.project.getById.setData({ id: initialProject.id }, (old) =>
+        old
+          ? {
+              ...old,
+              tasks: [...old.tasks, optimisticTask],
+              totalTaskCount: old.totalTaskCount + 1,
+            }
+          : old,
+      );
+
+      return { previousProject };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProject) {
+        utils.project.getById.setData(
+          { id: initialProject.id },
+          context.previousProject,
+        );
+      }
+      toast.error("Failed to create task");
+    },
     onSuccess: () => {
-      void refetch();
-      void utils.goal.getAll.invalidate();
+      toast.success("Task created");
       setCreateTaskOpen(false);
       setNewTaskTitle("");
       setNewTaskDescription("");
       setNewTaskPriority("medium");
       setNewTaskDueDate("");
     },
+    onSettled: () => {
+      void utils.project.getById.invalidate();
+      void utils.goal.getAll.invalidate();
+    },
   });
 
   const completeTask = api.task.complete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.project.getById.cancel();
+      const previousProject = utils.project.getById.getData({
+        id: initialProject.id,
+      });
+
+      // Optimistically mark task as completed
+      utils.project.getById.setData({ id: initialProject.id }, (old) =>
+        old
+          ? {
+              ...old,
+              tasks: old.tasks.map((t) =>
+                t.id === id
+                  ? {
+                      ...t,
+                      status: "completed" as const,
+                      completedAt: new Date(),
+                    }
+                  : t,
+              ),
+              completedTaskCount: old.completedTaskCount + 1,
+              progress: Math.round(
+                ((old.completedTaskCount + 1) / old.totalTaskCount) * 100,
+              ),
+            }
+          : old,
+      );
+
+      return { previousProject };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProject) {
+        utils.project.getById.setData(
+          { id: initialProject.id },
+          context.previousProject,
+        );
+      }
+      toast.error("Failed to complete task");
+    },
     onSuccess: () => {
-      void refetch();
+      toast.success("Task completed");
+    },
+    onSettled: () => {
+      void utils.project.getById.invalidate();
       void utils.goal.getAll.invalidate();
     },
   });
 
   const updateTask = api.task.update.useMutation({
+    onMutate: async ({ id, status }) => {
+      await utils.project.getById.cancel();
+      const previousProject = utils.project.getById.getData({
+        id: initialProject.id,
+      });
+
+      // Find current task to track status changes
+      const currentTask = previousProject?.tasks.find((t) => t.id === id);
+      const wasCompleted = currentTask?.status === "completed";
+      const willBeCompleted = status === "completed";
+
+      // Optimistically update task status (we only use this mutation for status changes here)
+      utils.project.getById.setData({ id: initialProject.id }, (old) => {
+        if (!old) return old;
+
+        // Calculate new completed count
+        let newCompletedCount = old.completedTaskCount;
+        if (wasCompleted && !willBeCompleted && status !== undefined) {
+          newCompletedCount = Math.max(0, newCompletedCount - 1);
+        } else if (!wasCompleted && willBeCompleted) {
+          newCompletedCount = newCompletedCount + 1;
+        }
+
+        return {
+          ...old,
+          tasks: old.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  status: status ?? t.status,
+                  updatedAt: new Date(),
+                }
+              : t,
+          ),
+          completedTaskCount: newCompletedCount,
+          progress:
+            old.totalTaskCount > 0
+              ? Math.round((newCompletedCount / old.totalTaskCount) * 100)
+              : 0,
+        };
+      });
+
+      return { previousProject };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProject) {
+        utils.project.getById.setData(
+          { id: initialProject.id },
+          context.previousProject,
+        );
+      }
+      toast.error("Failed to update task");
+    },
     onSuccess: () => {
-      void refetch();
+      toast.success("Task updated");
+    },
+    onSettled: () => {
+      void utils.project.getById.invalidate();
     },
   });
 
   const deleteTask = api.task.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.project.getById.cancel();
+      const previousProject = utils.project.getById.getData({
+        id: initialProject.id,
+      });
+
+      // Find the task to check if it was completed
+      const taskToDelete = previousProject?.tasks.find((t) => t.id === id);
+      const wasCompleted = taskToDelete?.status === "completed";
+
+      // Optimistically remove task
+      utils.project.getById.setData({ id: initialProject.id }, (old) =>
+        old
+          ? {
+              ...old,
+              tasks: old.tasks.filter((t) => t.id !== id),
+              totalTaskCount: old.totalTaskCount - 1,
+              completedTaskCount: wasCompleted
+                ? old.completedTaskCount - 1
+                : old.completedTaskCount,
+              progress:
+                old.totalTaskCount > 1
+                  ? Math.round(
+                      ((wasCompleted
+                        ? old.completedTaskCount - 1
+                        : old.completedTaskCount) /
+                        (old.totalTaskCount - 1)) *
+                        100,
+                    )
+                  : 0,
+            }
+          : old,
+      );
+
+      return { previousProject };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousProject) {
+        utils.project.getById.setData(
+          { id: initialProject.id },
+          context.previousProject,
+        );
+      }
+      toast.error("Failed to delete task");
+    },
     onSuccess: () => {
-      void refetch();
+      toast.success("Task deleted");
+    },
+    onSettled: () => {
+      void utils.project.getById.invalidate();
       void utils.goal.getAll.invalidate();
     },
   });

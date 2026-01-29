@@ -26,6 +26,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/react";
 import { GoogleCalendarSettings } from "~/components/settings/google-calendar-settings";
+import { toast } from "~/components/ui/sonner";
 
 type UserPreferences = NonNullable<RouterOutputs["userPreferences"]["get"]>;
 
@@ -52,12 +53,21 @@ export function SettingsForm({ initialPreferences }: SettingsFormProps) {
     initialData: initialPreferences,
   });
 
+  const utils = api.useUtils();
+
   const updatePreferences = api.userPreferences.update.useMutation({
     onSuccess: (data) => {
       if (data) {
         setPreferences(data);
       }
       setHasChanges(false);
+      toast.success("Settings saved");
+    },
+    onError: () => {
+      toast.error("Failed to save settings");
+    },
+    onSettled: () => {
+      void utils.userPreferences.get.invalidate();
     },
   });
 

@@ -128,7 +128,7 @@ export function CalendarView({
   const weekEnd = useMemo(() => addDays(weekStart, 7), [weekStart]);
 
   // Fetch time blocks and tasks for current week
-  const { data: timeBlocks = initialTimeBlocks, refetch: refetchBlocks } =
+  const { data: timeBlocks = initialTimeBlocks } =
     api.timeBlock.getByDateRange.useQuery(
       {
         startDate: weekStart.toISOString(),
@@ -144,7 +144,6 @@ export function CalendarView({
       scheduled: initialScheduledTasks,
       unscheduled: initialUnscheduledTasks,
     },
-    refetch: refetchTasks,
   } = api.task.getByDateRange.useQuery(
     {
       startDate: weekStart.toISOString(),
@@ -179,19 +178,132 @@ export function CalendarView({
     [googleEventsData?.events],
   );
 
+  const utils = api.useUtils();
+
   const createTimeBlock = api.timeBlock.create.useMutation({
+    onMutate: async (newBlock) => {
+      await utils.timeBlock.getByDateRange.cancel();
+      const previousBlocks = utils.timeBlock.getByDateRange.getData({
+        startDate: weekStart.toISOString(),
+        endDate: weekEnd.toISOString(),
+      });
+
+      // Create optimistic time block
+      const optimisticBlock: TimeBlock = {
+        id: `temp-${Date.now()}`,
+        title: newBlock.title,
+        startTime: new Date(newBlock.startTime),
+        endTime: new Date(newBlock.endTime),
+        color: newBlock.color ?? "#3b82f6",
+        notes: newBlock.notes ?? null,
+        isCompleted: false,
+        userId: "",
+        taskId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        googleCalendarEventId: null,
+        task: null,
+      };
+
+      utils.timeBlock.getByDateRange.setData(
+        {
+          startDate: weekStart.toISOString(),
+          endDate: weekEnd.toISOString(),
+        },
+        (old) => (old ? [...old, optimisticBlock] : [optimisticBlock]),
+      );
+
+      return { previousBlocks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousBlocks) {
+        utils.timeBlock.getByDateRange.setData(
+          {
+            startDate: weekStart.toISOString(),
+            endDate: weekEnd.toISOString(),
+          },
+          context.previousBlocks,
+        );
+      }
+      toast.error("Failed to create time block");
+    },
     onSuccess: () => {
-      void refetchBlocks();
-      void refetchTasks();
+      toast.success("Time block created");
       setIsDialogOpen(false);
       setSelectedSlot(null);
+    },
+    onSettled: () => {
+      void utils.timeBlock.getByDateRange.invalidate();
+      void utils.task.getByDateRange.invalidate();
     },
   });
 
   // Task creation mutation
   const createTaskMutation = api.task.create.useMutation({
+    onMutate: async (newTask) => {
+      await utils.task.getByDateRange.cancel();
+      const previousTasks = utils.task.getByDateRange.getData({
+        startDate: weekStart.toISOString(),
+        endDate: weekEnd.toISOString(),
+        includeUnscheduled: true,
+      });
+
+      // Create optimistic task for unscheduled list
+      // We type-cast to Task since we have all required display fields
+      const optimisticTask = {
+        id: `temp-${Date.now()}`,
+        title: newTask.title,
+        description: newTask.description ?? null,
+        status: "todo" as const,
+        priority: newTask.priority ?? ("medium" as const),
+        dueDate: newTask.dueDate ? new Date(newTask.dueDate) : null,
+        scheduledStart: null,
+        scheduledEnd: null,
+        estimatedMinutes: newTask.estimatedMinutes ?? null,
+        projectId: newTask.projectId ?? null,
+        goalId: newTask.goalId ?? null,
+        userId: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        completedAt: null,
+        sortOrder: 0,
+        project: null,
+        goal: null,
+        board: null,
+      } as Task;
+
+      utils.task.getByDateRange.setData(
+        {
+          startDate: weekStart.toISOString(),
+          endDate: weekEnd.toISOString(),
+          includeUnscheduled: true,
+        },
+        (old) =>
+          old
+            ? {
+                ...old,
+                unscheduled: [...old.unscheduled, optimisticTask],
+              }
+            : { scheduled: [], unscheduled: [optimisticTask] },
+      );
+
+      return { previousTasks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        utils.task.getByDateRange.setData(
+          {
+            startDate: weekStart.toISOString(),
+            endDate: weekEnd.toISOString(),
+            includeUnscheduled: true,
+          },
+          context.previousTasks,
+        );
+      }
+      toast.error("Failed to create task");
+    },
     onSuccess: async (newTask) => {
-      void refetchTasks();
+      toast.success("Task created");
       setNewTaskTitle("");
       setIsAddingTask(false);
 
@@ -207,14 +319,68 @@ export function CalendarView({
         }
       }
     },
+    onSettled: () => {
+      void utils.task.getByDateRange.invalidate();
+    },
   });
 
   // Task schedule mutation
   const scheduleMutation = api.task.schedule.useMutation({
+    onMutate: async ({ id, scheduledStart, scheduledEnd }) => {
+      await utils.task.getByDateRange.cancel();
+      const previousTasks = utils.task.getByDateRange.getData({
+        startDate: weekStart.toISOString(),
+        endDate: weekEnd.toISOString(),
+        includeUnscheduled: true,
+      });
+
+      // Optimistically move task from unscheduled to scheduled
+      utils.task.getByDateRange.setData(
+        {
+          startDate: weekStart.toISOString(),
+          endDate: weekEnd.toISOString(),
+          includeUnscheduled: true,
+        },
+        (old) => {
+          if (!old) return old;
+          const taskToSchedule = old.unscheduled.find((t) => t.id === id);
+          if (!taskToSchedule) return old;
+
+          const scheduledTask = {
+            ...taskToSchedule,
+            scheduledStart: new Date(scheduledStart),
+            scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
+          } as Task;
+
+          return {
+            scheduled: [...old.scheduled, scheduledTask],
+            unscheduled: old.unscheduled.filter((t) => t.id !== id),
+          };
+        },
+      );
+
+      return { previousTasks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTasks) {
+        utils.task.getByDateRange.setData(
+          {
+            startDate: weekStart.toISOString(),
+            endDate: weekEnd.toISOString(),
+            includeUnscheduled: true,
+          },
+          context.previousTasks,
+        );
+      }
+      toast.error("Failed to schedule task");
+    },
     onSuccess: () => {
-      void refetchTasks();
-      void refetchBlocks();
+      toast.success("Task scheduled");
       setDraggedTaskId(null);
+    },
+    onSettled: () => {
+      void utils.task.getByDateRange.invalidate();
+      void utils.timeBlock.getByDateRange.invalidate();
     },
   });
 
@@ -224,21 +390,100 @@ export function CalendarView({
 
   // Time block update mutation
   const updateTimeBlock = api.timeBlock.update.useMutation({
+    onMutate: async ({ id, ...updates }) => {
+      await utils.timeBlock.getByDateRange.cancel();
+      const previousBlocks = utils.timeBlock.getByDateRange.getData({
+        startDate: weekStart.toISOString(),
+        endDate: weekEnd.toISOString(),
+      });
+
+      // Optimistically update the time block
+      utils.timeBlock.getByDateRange.setData(
+        {
+          startDate: weekStart.toISOString(),
+          endDate: weekEnd.toISOString(),
+        },
+        (old) =>
+          old?.map((block) =>
+            block.id === id
+              ? {
+                  ...block,
+                  ...updates,
+                  startTime: updates.startTime
+                    ? new Date(updates.startTime)
+                    : block.startTime,
+                  endTime: updates.endTime
+                    ? new Date(updates.endTime)
+                    : block.endTime,
+                  updatedAt: new Date(),
+                }
+              : block,
+          ),
+      );
+
+      return { previousBlocks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousBlocks) {
+        utils.timeBlock.getByDateRange.setData(
+          {
+            startDate: weekStart.toISOString(),
+            endDate: weekEnd.toISOString(),
+          },
+          context.previousBlocks,
+        );
+      }
+      toast.error("Failed to update time block");
+    },
     onSuccess: () => {
-      void refetchBlocks();
       toast.success("Time block updated");
       setIsEditMode(false);
+    },
+    onSettled: () => {
+      void utils.timeBlock.getByDateRange.invalidate();
     },
   });
 
   // Time block delete mutation
   const deleteTimeBlock = api.timeBlock.delete.useMutation({
+    onMutate: async ({ id }) => {
+      await utils.timeBlock.getByDateRange.cancel();
+      const previousBlocks = utils.timeBlock.getByDateRange.getData({
+        startDate: weekStart.toISOString(),
+        endDate: weekEnd.toISOString(),
+      });
+
+      // Optimistically remove the time block
+      utils.timeBlock.getByDateRange.setData(
+        {
+          startDate: weekStart.toISOString(),
+          endDate: weekEnd.toISOString(),
+        },
+        (old) => old?.filter((block) => block.id !== id),
+      );
+
+      return { previousBlocks };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousBlocks) {
+        utils.timeBlock.getByDateRange.setData(
+          {
+            startDate: weekStart.toISOString(),
+            endDate: weekEnd.toISOString(),
+          },
+          context.previousBlocks,
+        );
+      }
+      toast.error("Failed to delete time block");
+    },
     onSuccess: () => {
-      void refetchBlocks();
-      void refetchTasks();
       toast.success("Time block deleted");
       setIsEventSheetOpen(false);
       setSelectedEvent(null);
+    },
+    onSettled: () => {
+      void utils.timeBlock.getByDateRange.invalidate();
+      void utils.task.getByDateRange.invalidate();
     },
   });
 

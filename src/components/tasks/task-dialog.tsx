@@ -31,6 +31,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { Calendar } from "~/components/ui/calendar";
+import { toast } from "~/components/ui/sonner";
 
 interface Task {
   id: string;
@@ -78,17 +79,37 @@ export function TaskDialog({
   const utils = api.useUtils();
 
   const createTask = api.task.create.useMutation({
+    onError: () => {
+      toast.error("Failed to create task");
+    },
     onSuccess: () => {
-      void utils.task.getAll.invalidate();
+      toast.success("Task created");
       onOpenChange(false);
       resetForm();
+    },
+    onSettled: () => {
+      void utils.task.getAll.invalidate();
+      void utils.task.getToday.invalidate();
+      void utils.task.getThisWeek.invalidate();
+      void utils.task.getByDateRange.invalidate();
+      void utils.project.getById.invalidate();
     },
   });
 
   const updateTask = api.task.update.useMutation({
+    onError: () => {
+      toast.error("Failed to update task");
+    },
     onSuccess: () => {
-      void utils.task.getAll.invalidate();
+      toast.success("Task updated");
       onOpenChange(false);
+    },
+    onSettled: () => {
+      void utils.task.getAll.invalidate();
+      void utils.task.getToday.invalidate();
+      void utils.task.getThisWeek.invalidate();
+      void utils.task.getByDateRange.invalidate();
+      void utils.project.getById.invalidate();
     },
   });
 

@@ -28,6 +28,7 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
+import { toast } from "~/components/ui/sonner";
 
 export function GoogleCalendarSettings() {
   const [isConnecting, setIsConnecting] = useState(false);
@@ -53,13 +54,22 @@ export function GoogleCalendarSettings() {
   const utils = api.useUtils();
 
   const disconnectMutation = api.googleCalendar.disconnect.useMutation({
+    onError: () => {
+      toast.error("Failed to disconnect Google account");
+    },
     onSuccess: () => {
+      toast.success("Google account disconnected");
+    },
+    onSettled: () => {
       void utils.googleCalendar.getStatus.invalidate();
     },
   });
 
   const updateSettingsMutation = api.googleCalendar.updateSettings.useMutation({
-    onSuccess: () => {
+    onError: () => {
+      toast.error("Failed to update settings");
+    },
+    onSettled: () => {
       void utils.googleCalendar.getStatus.invalidate();
     },
   });
