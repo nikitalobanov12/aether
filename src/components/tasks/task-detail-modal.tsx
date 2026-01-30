@@ -337,7 +337,10 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent
+        className="max-h-[90vh] overflow-hidden p-0 sm:max-w-lg"
+        showCloseButton={false}
+      >
         <VisuallyHidden.Root>
           <DialogTitle>Task Details: {task.title}</DialogTitle>
         </VisuallyHidden.Root>
