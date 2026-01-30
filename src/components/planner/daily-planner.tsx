@@ -28,6 +28,7 @@ import {
   Clock,
   ExternalLink,
   MapPin,
+  Play,
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -314,6 +315,18 @@ export function DailyPlanner({
     },
   });
 
+  const setNextUpMutation = api.task.setNextUp.useMutation({
+    onSuccess: () => {
+      toast.success("Task set as Next Up");
+    },
+    onError: () => {
+      toast.error("Failed to set Next Up");
+    },
+    onSettled: () => {
+      void utils.task.getToday.invalidate();
+    },
+  });
+
   const createTaskMutation = api.task.create.useMutation({
     onMutate: async (newTaskInput) => {
       await utils.task.getToday.cancel();
@@ -546,6 +559,14 @@ export function DailyPlanner({
       deleteMutation.mutate({ id: taskId });
     },
     [deleteMutation],
+  );
+
+  // Handle set as Next Up
+  const handleSetNextUp = useCallback(
+    (taskId: string) => {
+      setNextUpMutation.mutate({ id: taskId });
+    },
+    [setNextUpMutation],
   );
 
   // Handle quick task creation
@@ -802,6 +823,7 @@ export function DailyPlanner({
                   onComplete={handleComplete}
                   onSnooze={handleSnooze}
                   onDelete={handleDelete}
+                  onSetNextUp={handleSetNextUp}
                   onDragStart={(e) => handleDragStart(e, task.id, "today")}
                   onSelect={() => setSelectedId(task.id)}
                   refCallback={(el) => {
@@ -1241,10 +1263,14 @@ interface TaskItemProps {
   onComplete: (id: string) => void;
   onSnooze: (id: string) => void;
   onDelete: (id: string) => void;
+  onSetNextUp?: (id: string) => void;
   onDragStart: (e: React.DragEvent) => void;
   onSelect?: () => void;
   refCallback?: (el: HTMLDivElement | null) => void;
 }
+
+// Teal accent color for Next Up
+const TEAL_ACCENT = "#32B8C6";
 
 function TaskItem({
   task,
@@ -1252,6 +1278,7 @@ function TaskItem({
   onComplete,
   onSnooze,
   onDelete,
+  onSetNextUp,
   onDragStart,
   onSelect,
   refCallback,
@@ -1262,6 +1289,8 @@ function TaskItem({
     task.dueDate &&
     new Date(task.dueDate) < now &&
     !isToday(new Date(task.dueDate));
+
+  const isNextUp = task.isNextUp;
 
   // Swipe gesture for mobile
   const { offset, isSwiping, handlers } = useSwipeGesture({
@@ -1308,12 +1337,14 @@ function TaskItem({
           "group bg-background relative flex min-h-[56px] items-start gap-3 border p-3 transition-colors",
           "touch-pan-y", // Allow vertical scroll but capture horizontal
           !isSwiping && "rounded-lg", // Only round when not swiping
-          !isSwiping && "hover:bg-muted/50",
-          isOverdue && "border-red-500/30 bg-red-500/5",
+          !isSwiping && !isNextUp && "hover:bg-muted/50",
+          isOverdue && !isNextUp && "border-red-500/30 bg-red-500/5",
+          isNextUp && "border-l-4 bg-[#32B8C6]/5",
         )}
         style={{
           transform: isSwiping ? `translateX(${offset}px)` : undefined,
           transition: isSwiping ? "none" : "transform 0.2s ease-out",
+          ...(isNextUp && { borderLeftColor: TEAL_ACCENT }),
         }}
         draggable
         onDragStart={onDragStart}
@@ -1348,6 +1379,20 @@ function TaskItem({
                 {task.title}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
+                {/* Next Up badge */}
+                {isNextUp && (
+                  <Badge
+                    className="text-xs"
+                    style={{
+                      backgroundColor: `${TEAL_ACCENT}20`,
+                      color: TEAL_ACCENT,
+                      borderColor: TEAL_ACCENT,
+                    }}
+                  >
+                    <Play className="mr-1 h-3 w-3" />
+                    Next Up
+                  </Badge>
+                )}
                 {/* Project */}
                 {task.project && (
                   <Badge variant="secondary" className="text-xs">
@@ -1413,6 +1458,16 @@ function TaskItem({
                   <Calendar className="mr-2 h-4 w-4" />
                   Snooze to tomorrow
                 </DropdownMenuItem>
+                {/* Set as Next Up - only show for tasks with projects that aren't already Next Up */}
+                {task.projectId && !isNextUp && onSetNextUp && (
+                  <DropdownMenuItem onClick={() => onSetNextUp(task.id)}>
+                    <Play
+                      className="mr-2 h-4 w-4"
+                      style={{ color: TEAL_ACCENT }}
+                    />
+                    Set as Next Up
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => onDelete(task.id)}

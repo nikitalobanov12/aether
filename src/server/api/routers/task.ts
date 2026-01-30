@@ -737,6 +737,52 @@ export const taskRouter = createTRPCRouter({
       return updatedTask;
     }),
 
+  // Set a task as "Next Up" for its project
+  setNextUp: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Get the task first
+      const targetTask = await ctx.db.query.task.findFirst({
+        where: and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id)),
+      });
+
+      if (!targetTask) {
+        throw new Error("Task not found");
+      }
+
+      if (!targetTask.projectId) {
+        throw new Error("Task must belong to a project to set as Next Up");
+      }
+
+      // Get the minimum nextUpOrder for the project (or 0 if none exist)
+      const projectTasks = await ctx.db.query.task.findMany({
+        where: and(
+          eq(task.projectId, targetTask.projectId),
+          eq(task.userId, ctx.session.user.id),
+        ),
+        columns: { nextUpOrder: true },
+      });
+
+      const minOrder = Math.min(
+        0,
+        ...projectTasks
+          .map((t) => t.nextUpOrder)
+          .filter((o): o is number => o !== null),
+      );
+
+      // Set this task's nextUpOrder to be lower than all others
+      const [updated] = await ctx.db
+        .update(task)
+        .set({
+          nextUpOrder: minOrder - 1,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(task.id, input.id), eq(task.userId, ctx.session.user.id)))
+        .returning();
+
+      return updated;
+    }),
+
   // Schedule a task to a time slot
   schedule: protectedProcedure
     .input(
