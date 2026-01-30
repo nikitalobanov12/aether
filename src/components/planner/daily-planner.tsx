@@ -59,6 +59,7 @@ import {
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
 import { toast } from "~/components/ui/sonner";
+import { TaskDetailModal } from "~/components/tasks/task-detail-modal";
 import type { RouterOutputs } from "~/trpc/react";
 
 type TodayTask = RouterOutputs["task"]["getToday"][number];
@@ -104,6 +105,10 @@ export function DailyPlanner({
   // Event detail sheet state
   const [selectedEvent, setSelectedEvent] = useState<AgendaItem | null>(null);
   const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
+
+  // Task detail modal state
+  const [selectedTask, setSelectedTask] = useState<TodayTask | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   const isViewingToday = isToday(selectedDate);
 
@@ -531,10 +536,23 @@ export function DailyPlanner({
     return googleEvents.filter((event) => event.allDay);
   }, [googleEvents]);
 
-  // Handle event click to open detail sheet
+  // Handle event click to open detail sheet (for non-task items)
   const handleEventClick = useCallback((item: AgendaItem) => {
-    setSelectedEvent(item);
-    setIsEventSheetOpen(true);
+    if (item.type === "task") {
+      // Open task modal instead of sheet
+      setSelectedTask(item.data);
+      setIsTaskModalOpen(true);
+    } else {
+      // Open sheet for time blocks and Google events
+      setSelectedEvent(item);
+      setIsEventSheetOpen(true);
+    }
+  }, []);
+
+  // Handle task click to open modal
+  const handleTaskClick = useCallback((task: TodayTask) => {
+    setSelectedTask(task);
+    setIsTaskModalOpen(true);
   }, []);
 
   // Handle task completion
@@ -826,6 +844,7 @@ export function DailyPlanner({
                   onSetNextUp={handleSetNextUp}
                   onDragStart={(e) => handleDragStart(e, task.id, "today")}
                   onSelect={() => setSelectedId(task.id)}
+                  onClick={() => handleTaskClick(task)}
                   refCallback={(el) => {
                     if (el) {
                       taskRefs.current.set(task.id, el);
@@ -877,7 +896,7 @@ export function DailyPlanner({
         </div>
       </ScrollArea>
 
-      {/* Event Detail Sheet */}
+      {/* Event Detail Sheet - for time blocks and Google events */}
       <Sheet open={isEventSheetOpen} onOpenChange={setIsEventSheetOpen}>
         <SheetContent side="right" className="w-full sm:max-w-md">
           {selectedEvent && (
@@ -895,6 +914,16 @@ export function DailyPlanner({
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        task={selectedTask}
+        open={isTaskModalOpen}
+        onOpenChange={setIsTaskModalOpen}
+        onComplete={handleComplete}
+        onSnooze={handleSnooze}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
@@ -1266,6 +1295,7 @@ interface TaskItemProps {
   onSetNextUp?: (id: string) => void;
   onDragStart: (e: React.DragEvent) => void;
   onSelect?: () => void;
+  onClick?: () => void;
   refCallback?: (el: HTMLDivElement | null) => void;
 }
 
@@ -1281,6 +1311,7 @@ function TaskItem({
   onSetNextUp,
   onDragStart,
   onSelect,
+  onClick,
   refCallback,
 }: TaskItemProps) {
   const now = new Date();
@@ -1335,7 +1366,7 @@ function TaskItem({
       <div
         className={cn(
           "group bg-background relative flex min-h-[56px] items-start gap-3 border p-3 transition-colors",
-          "touch-pan-y", // Allow vertical scroll but capture horizontal
+          "cursor-pointer touch-pan-y", // Allow vertical scroll but capture horizontal
           !isSwiping && "rounded-lg", // Only round when not swiping
           !isSwiping && !isNextUp && "hover:bg-muted/50",
           isOverdue && !isNextUp && "border-red-500/30 bg-red-500/5",
@@ -1348,7 +1379,19 @@ function TaskItem({
         }}
         draggable
         onDragStart={onDragStart}
-        onClick={onSelect}
+        onClick={(e) => {
+          // Open task modal on click (unless clicking interactive elements)
+          const target = e.target as HTMLElement;
+          if (
+            target.closest("button") ||
+            target.closest('[role="checkbox"]') ||
+            target.closest("[data-no-click]")
+          ) {
+            return;
+          }
+          onClick?.();
+          onSelect?.();
+        }}
         {...handlers}
       >
         {/* Drag handle - hidden on mobile */}

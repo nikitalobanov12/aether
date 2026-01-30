@@ -53,6 +53,7 @@ import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { toast } from "~/components/ui/sonner";
 import { useSwipeGesture } from "~/hooks/use-swipe-gesture";
+import { TaskDetailModal } from "~/components/tasks/task-detail-modal";
 import type { RouterOutputs } from "~/trpc/react";
 
 // Time grid constants
@@ -108,6 +109,10 @@ export function CalendarView({
   );
   const [isEventSheetOpen, setIsEventSheetOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  // Task detail modal state (for tasks, we use the modal instead of the sheet)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   // Mobile state - track center date for 3-day view
   const [mobileCenterDate, setMobileCenterDate] = useState(new Date());
@@ -518,9 +523,9 @@ export function CalendarView({
   };
 
   const handleTaskClick = (task: Task) => {
-    setSelectedEvent({ type: "task", data: task });
-    setIsEditMode(false);
-    setIsEventSheetOpen(true);
+    // Open task modal instead of sheet for better UX
+    setSelectedTask(task);
+    setIsTaskModalOpen(true);
   };
 
   const handleGoogleEventClick = (event: GoogleCalendarEvent) => {
@@ -1186,6 +1191,13 @@ export function CalendarView({
           </ScrollArea>
         </SheetContent>
       </Sheet>
+
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        task={selectedTask}
+        open={isTaskModalOpen}
+        onOpenChange={setIsTaskModalOpen}
+      />
     </div>
   );
 }
