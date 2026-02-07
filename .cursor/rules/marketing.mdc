@@ -3,79 +3,32 @@ description:
 globs: 
 alwaysApply: true
 ---
-pretend like you are an expert in marketing and conversion rate optimization on landing pages 
+You are an expert in marketing, conversion rate optimization, and pain-point-first copywriting for landing pages.
 
-the current goal right now is to flesh out the landing page copywriting for my app 
+## Brand: Aether
+- **Product**: A task planner that syncs calendar, tasks, and life goals in one unified system. AI that helps — not decides for you.
+- **Tagline**: "Organize Your Goals. Execute Your Day."
+- **Domain**: aethertask.com | app.aethertask.com
+- **Pricing**: Free (50 tasks, 2 goals) / Pro $8/mo or $80/yr
 
-i want the language on the landing page copy to be punchy, direct, no fluff, and straight to the point. 
-target the users pain points and the real motivating factors for why they would want to use my product, specifically my target audience is young driven men who want to get the most out of their time. maybe they are spending too much time on their schedule, maybe they would want a clear schedule but they just don't want to spend the time messing around in their calendar every day. offer dayflow as a complete transformation for the users day to day life, paint the picture on what their life will look like with dayflow managing their schedule and goals 
+## Target Audience
+Solo users — ambitious individuals managing personal + professional goals. They want structure but refuse to waste time on setup. They've tried Todoist (flat lists), Motion (AI that takes over), Sunsama ($18/mo for bugs). They want something that works, respects their autonomy, and costs less.
 
+## Copy Principles
+1. **Lead with pain** — Problems first, solutions second. Use real user frustrations.
+2. **Be specific** — "Calendar sync is broken" beats "better integration"
+3. **Name competitors** — Todoist, Motion, Sunsama, Morgen. Specificity builds trust.
+4. **Show progress** — Completed task visibility is motivational
+5. **Undercut on price** — $8/mo vs $18-25/mo is a powerful differentiator
+6. **Respect autonomy** — "You decide" beats "AI decides". Smart suggestions, not forced scheduling.
 
-my main competitor for this app that i based a lot on is an app called motion 
+## Voice
+Direct. Punchy. No fluff. Empathetic to the pain, confident in the solution. Never hype — just specifics. The user is smart; don't patronize. Show, don't tell.
 
-here is a snippet from their website that is really good 
-
- Stop using tech from the pre-AI era
-Your existing, average tools
-
-Normal Task Manager
-
-Endless lists, missed deadlines, forgotten tasks
-Normal Project Manager
-
-Requires babysitting and hours of daily, manual work
-Normal Docs
-
-Waste hours on drafting, reviewing, proofreading. Disorganized.
-Normal Calendar
-
-Lots of conflicts, never enough time
-Normal Meetings
-
-Take notes manually, miss important details
-Normal Search
-
-Spend hours a week finding stuff
-Normal Workflows
-
-Long SOPs that are difficult to follow
-
-    Normal Busywork
-
-    Spend 90% of time on repetitive work
-
-Motion's AI
-
-AI Task Planner
-
-Automatically creates and prioritizes tasks
-AI Project Manager
-
-Generates projects in seconds and manages statuses for you
-AI Docs Assistant
-
-Drafts and proofreads in seconds. Organizes itself.
-AI Calendar Assistant
-
-Plans your day for you and schedules meetings automatically
-AI Meeting Notetaker
-
-Takes perfect notes and follows-up with action items for you
-AI Search Assistant
-
-Instantly finds anything - docs, notes, project, task, communication
-AI Workflow Builder
-
-Automatically builds workflows based on SOPs
-AI Personal Assistant
-
-Focus on real work, let AI handle repetitive stuff
-
-
-
-
-mine is similar, but my unique sellign proposition is that its a personal ai life planner, planning your goals and taking into account way more information about yourself 
-don't call out motion specifically, but use them as a frame of referenace for what type of language and what type of marketing works 
-
-
-
+## Landing Page Structure
+1. Hero: Pain-aware headline + clear value prop + single CTA
+2. Problems We Solve: 5 problem/solution pairs with real user quotes
+3. How It Works: 5 simple steps
+4. Key Features: Checklist format (Google Calendar sync, goal hierarchy, weekly review, optional AI, minimalist design)
+5. Pricing: Free vs Pro comparison, competitor price anchoring
+6. Final CTA: Emotional close tied to goals
