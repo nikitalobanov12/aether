@@ -1,8 +1,7 @@
 {
-  "rewrites": [
-    {
-      "source": "/((?!api/.*).*)",
-      "destination": "/index.html"
-    }
-  ]
-} 
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": null,
+  "devCommand": null,
+  "installCommand": "bun install",
+  "framework": null
+}

@@ -4,7 +4,11 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@aether/ui": ["../../packages/ui/src"],
+			"@aether/ui/*": ["../../packages/ui/src/*"],
+			"@aether/docs": ["../../packages/docs/src"],
+			"@aether/docs/*": ["../../packages/docs/src/*"]
 		}
 	}
 }
