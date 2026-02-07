@@ -11,10 +11,10 @@ export function PrivacyPolicy() {
 					<div className="flex items-center gap-3">
 						<img
 							src="/logo.svg"
-							alt="DayFlow"
+							alt="Aether"
 							className="h-8 w-8"
 						/>
-						<span className="text-xl font-bold">DayFlow</span>
+						<span className="text-xl font-bold">Aether</span>
 					</div>
 					<Button asChild variant="outline">
 						<Link to="/">
@@ -38,10 +38,10 @@ export function PrivacyPolicy() {
 
 					<h2>Introduction</h2>
 					<p>
-						Welcome to DayFlow ("we," "our," or "us"). This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you use our productivity application and related services (the "Service").
+						Welcome to Aether ("we," "our," or "us"). This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you use our productivity application and related services (the "Service").
 					</p>
 					<p>
-						DayFlow is a hybrid desktop and web application that helps users manage tasks, set goals, and optimize productivity through AI-powered scheduling and insights.
+						Aether is a hybrid desktop and web application that helps users manage tasks, set goals, and optimize productivity through AI-powered scheduling and insights.
 					</p>
 
 					<h2>Information We Collect</h2>
@@ -78,11 +78,11 @@ export function PrivacyPolicy() {
 
 					<h2>Third-Party Integrations</h2>
 
-					<h3>Supabase (Database and Authentication)</h3>
+					<h3>Neon PostgreSQL (Database) + Better Auth (Authentication)</h3>
 					<ul>
 						<li><strong>Purpose:</strong> Secure data storage, user authentication, and real-time synchronization</li>
 						<li><strong>Data Shared:</strong> All user account information, tasks, goals, preferences, and application data</li>
-						<li><strong>Privacy Policy:</strong> <a href="https://supabase.com/privacy">Supabase Privacy Policy</a></li>
+						<li><strong>Privacy Policy:</strong> <a href="https://neon.tech/privacy">Neon Privacy Policy</a></li>
 					</ul>
 
 					<h3>Google Services</h3>
@@ -95,7 +95,7 @@ export function PrivacyPolicy() {
 
 					<h4>Google Tasks Integration:</h4>
 					<ul>
-						<li>Import existing Google Tasks into DayFlow</li>
+						<li>Import existing Google Tasks into Aether</li>
 						<li>Read task lists and task data</li>
 					</ul>
 
@@ -114,13 +114,13 @@ export function PrivacyPolicy() {
 						<li><strong>Privacy Policy:</strong> <a href="https://policies.google.com/privacy">Google Privacy Policy</a></li>
 					</ul>
 
-					<h3>Google Gemini AI</h3>
+					<h3>Hugging Face Inference API</h3>
 					<ul>
 						<li><strong>Purpose:</strong> Task scheduling optimization, time estimation, and productivity insights</li>
 						<li><strong>Data Processing:</strong> Task titles and descriptions (personal details are filtered out), user scheduling preferences and working hours, goal information for context-aware scheduling, board and project context for better scheduling decisions</li>
-						<li><strong>Data Security:</strong> All AI requests are processed through secure Supabase Edge Functions</li>
-						<li><strong>Data Retention:</strong> AI requests are processed in real-time and not stored by Google Gemini</li>
-						<li><strong>Privacy Policy:</strong> <a href="https://policies.google.com/privacy">Google AI Privacy Policy</a></li>
+						<li><strong>Data Security:</strong> All AI requests are processed through secure server-side functions</li>
+						<li><strong>Data Retention:</strong> AI requests are processed in real-time and not stored by the AI provider</li>
+						<li><strong>Privacy Policy:</strong> <a href="https://huggingface.co/privacy">Hugging Face Privacy Policy</a></li>
 					</ul>
 
 					<h2>How We Use Your Information</h2>
@@ -162,12 +162,12 @@ export function PrivacyPolicy() {
 						<li><strong>Encryption:</strong> All data is encrypted in transit (HTTPS/TLS) and at rest</li>
 						<li><strong>Authentication:</strong> Secure authentication using industry-standard protocols (OAuth 2.0, PKCE flow)</li>
 						<li><strong>Access Controls:</strong> Role-based access controls and principle of least privilege</li>
-						<li><strong>AI Security:</strong> AI processing occurs in secure, isolated Edge Functions with no data persistence</li>
+						<li><strong>AI Security:</strong> AI processing occurs in secure, isolated server-side functions with no data persistence</li>
 					</ul>
 
 					<h3>Data Storage</h3>
 					<ul>
-						<li><strong>Primary Storage:</strong> Data is stored in Supabase (PostgreSQL) with strong security guarantees</li>
+						<li><strong>Primary Storage:</strong> Data is stored in PostgreSQL (Neon) with strong security guarantees</li>
 						<li><strong>Geographic Location:</strong> Data is stored in secure data centers with compliance certifications</li>
 						<li><strong>Backups:</strong> Regular automated backups with encryption and secure storage</li>
 						<li><strong>Data Isolation:</strong> Row-level security ensures user data is isolated and accessible only to authorized users</li>
@@ -175,8 +175,8 @@ export function PrivacyPolicy() {
 
 					<h3>AI Data Processing</h3>
 					<ul>
-						<li><strong>Secure Processing:</strong> AI requests are processed through Supabase Edge Functions with user authentication</li>
-						<li><strong>No AI Data Storage:</strong> Google Gemini processes requests in real-time without storing your data</li>
+						<li><strong>Secure Processing:</strong> AI requests are processed through secure server-side functions with user authentication</li>
+						<li><strong>No AI Data Storage:</strong> Hugging Face processes requests in real-time without storing your data</li>
 						<li><strong>Data Minimization:</strong> Only necessary task context is sent to AI services, with personal details filtered out</li>
 						<li><strong>User Control:</strong> AI features can be disabled entirely through user preferences</li>
 					</ul>
@@ -232,7 +232,7 @@ export function PrivacyPolicy() {
 					<ul>
 						<li>Data may be transferred to and processed in countries other than your country of residence</li>
 						<li>We ensure appropriate safeguards are in place for international transfers</li>
-						<li>Supabase and Google services may process data in various global regions</li>
+						<li>Neon, Hugging Face, and Google services may process data in various global regions</li>
 						<li>All transfers comply with applicable data protection laws (GDPR, CCPA, etc.)</li>
 					</ul>
 
@@ -274,31 +274,31 @@ export function PrivacyPolicy() {
 					<h2>Contact Information</h2>
 					<p>For privacy-related questions, concerns, or requests:</p>
 					<ul>
-						<li><strong>Email:</strong> <a href="mailto:privacy@dayflow.ca">privacy@dayflow.ca</a></li>
-						<li><strong>Website:</strong> <a href="https://www.dayflow.ca">https://www.dayflow.ca</a></li>
+						<li><strong>Email:</strong> <a href="mailto:nikita@nikitalobanov.com">nikita@nikitalobanov.com</a></li>
+						<li><strong>Website:</strong> <a href="https://www.aethertask.com">https://www.aethertask.com</a></li>
 					</ul>
 
 					<h3>Data Protection Requests:</h3>
 					<ul>
 						<li><strong>Account deletion:</strong> Use the settings page in the application</li>
 						<li><strong>Data export:</strong> Available through the application settings</li>
-						<li><strong>Other requests:</strong> Contact <a href="mailto:privacy@dayflow.ca">privacy@dayflow.ca</a></li>
+						<li><strong>Other requests:</strong> Contact <a href="mailto:nikita@nikitalobanov.com">nikita@nikitalobanov.com</a></li>
 					</ul>
 
 					<h2>Data Processing Transparency</h2>
 
 					<h3>AI Processing Details</h3>
 					<ul>
-						<li><strong>Model Used:</strong> Google Gemini 2.5 Flash for task scheduling and time estimation</li>
+						<li><strong>Model Used:</strong> Hugging Face open-source models for task scheduling and time estimation</li>
 						<li><strong>Data Sent:</strong> Task titles, descriptions, user preferences, working hours (personal identifiers removed)</li>
-						<li><strong>Processing Location:</strong> Google's secure AI infrastructure</li>
+						<li><strong>Processing Location:</strong> Hugging Face's secure AI infrastructure</li>
 						<li><strong>Response Time:</strong> Real-time processing, no data storage by AI provider</li>
 						<li><strong>User Control:</strong> Full opt-out available through settings</li>
 					</ul>
 
 					<h3>Database Operations</h3>
 					<ul>
-						<li><strong>Provider:</strong> Supabase (built on PostgreSQL)</li>
+						<li><strong>Provider:</strong> Neon PostgreSQL</li>
 						<li><strong>Security:</strong> Row-level security, encryption at rest and in transit</li>
 						<li><strong>Backup:</strong> Automated daily backups, encrypted storage</li>
 						<li><strong>Access:</strong> Only authenticated users can access their own data</li>
