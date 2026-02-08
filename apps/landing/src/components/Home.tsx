@@ -629,8 +629,66 @@ export function Home() {
 					</div>
 				</section>
 
+				{/* Anti-Feature Section */}
+				<section className="py-24">
+					<div className="container mx-auto px-4">
+						<div className="max-w-4xl mx-auto">
+							{/* Headline */}
+							<motion.div
+								className="text-center mb-16"
+								variants={fadeInUp}
+								initial="hidden"
+								whileInView="visible"
+								transition={defaultTransition}
+								viewport={{ once: true, margin: '-50px' }}
+							>
+								<h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+									No "AI Magic." Just Control.
+								</h2>
+								<p className="font-text text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+									Motion tries to auto-schedule your life and gets it wrong. We believe you should be in charge. Aether uses AI to suggest, but never to override.
+								</p>
+							</motion.div>
+
+							{/* Comparison Grid */}
+							<motion.div
+								className="grid md:grid-cols-2 gap-6 md:gap-8"
+								variants={fadeIn}
+								initial="hidden"
+								whileInView="visible"
+								transition={{ ...defaultTransition, delay: 0.2 }}
+								viewport={{ once: true, margin: '-50px' }}
+							>
+								{/* Them Column */}
+								<div className="relative p-6 md:p-8 rounded-2xl border border-muted-foreground/20 bg-muted/20">
+									<div className="absolute -top-3 left-6">
+										<span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-background border border-muted-foreground/20 rounded-full">
+											Them
+										</span>
+									</div>
+									<p className="font-text text-lg md:text-xl text-muted-foreground leading-relaxed mt-2">
+										"We control your schedule."
+									</p>
+								</div>
+
+								{/* Us Column */}
+								<div className="relative p-6 md:p-8 rounded-2xl border-2 border-primary/50 bg-primary/5">
+									<div className="absolute -top-3 left-6">
+										<span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary bg-background border-2 border-primary/50 rounded-full">
+											Us
+										</span>
+									</div>
+									<p className="font-text text-lg md:text-xl text-foreground leading-relaxed mt-2 font-medium">
+										"Here is your schedule. You decide."
+									</p>
+								</div>
+							</motion.div>
+						</div>
+					</div>
+				</section>
+
 				{/* Pricing Section */}
-				<section id="pricing" className="py-24">
+				<section id="pricing" className="py-24 bg-muted/30">
 					<div className="container mx-auto px-4">
 						<motion.div
 							className="text-center mb-16"
