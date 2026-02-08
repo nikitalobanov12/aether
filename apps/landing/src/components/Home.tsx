@@ -216,62 +216,92 @@ export function Home() {
 				</div>
 			</motion.header>
 
-			{/* Hero Section - Centered */}
-			<section className="relative py-24 lg:py-32">
+			{/* Hero Section */}
+			<section className="relative py-20 lg:py-28 overflow-hidden">
 				<div className="container mx-auto px-4">
+					{/* Hero Copy */}
 					<motion.div
-						className="text-center max-w-3xl mx-auto"
+						className="text-center max-w-4xl mx-auto mb-16 lg:mb-20"
 						initial={{ opacity: 0, y: isMobile ? 20 : 40 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.8, ease: 'easeOut' }}
 					>
-						<Badge variant="secondary" className="mb-6 text-sm">
-							Stop paying $20/mo for a calendar wrapper
-						</Badge>
-
-						<h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight leading-[1.1]">
-							The missing link between your
+						<h1
+							className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 leading-[1.05]"
+							style={{ letterSpacing: '-0.02em' }}
+						>
+							Stop switching apps.
 							<br />
-							<span className="text-primary">Goals, Tasks, and Calendar.</span>
+							<span className="text-primary">Start finishing work.</span>
 						</h1>
 
-						<p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-							Todoist is too flat. Motion is too controlling. Sunsama is too expensive.
-							<br className="hidden md:block" />
-							Aether is the $8/mo workspace for solo makers who want the big picture and the daily details.
+						<p className="font-text text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+							The first workspace that treats your Calendar, Tasks, and Goals as one single system. No broken syncs. No AI clutter. Just focus.
 						</p>
 
 						<motion.div
 							whileHover={{ scale: 1.02 }}
 							whileTap={{ scale: 0.98 }}
-							className="inline-block mb-4"
+							className="inline-block mb-3"
 						>
-							<Button asChild size="lg" className="px-8 text-base">
+							<Button asChild size="lg" className="px-10 py-6 text-base font-medium">
 								<a
 									href="https://app.aethertask.com"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									Start for Free
+									Start Building for Free
 								</a>
 							</Button>
 						</motion.div>
 
-						<p className="text-sm text-muted-foreground mb-8">
+						<p className="font-text text-sm text-muted-foreground">
 							No credit card required
 						</p>
+					</motion.div>
 
-						<div className="flex flex-wrap justify-center gap-4 text-sm">
-							<Badge variant="outline" className="py-1.5 px-3">
-								Bi-directional Google Calendar sync
-							</Badge>
-							<Badge variant="outline" className="py-1.5 px-3">
-								Goal → Project → Task hierarchy
-							</Badge>
-							<Badge variant="outline" className="py-1.5 px-3">
-								$8/mo — not $20
-							</Badge>
+					{/* Hero Image with Glow */}
+					<motion.div
+						className="relative max-w-5xl mx-auto"
+						initial={{ opacity: 0, y: 60 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.9, delay: 0.2, ease: 'easeOut' }}
+					>
+						{/* Glow orb behind hero image */}
+						<div
+							className="glow-orb glow-orb--primary glow-orb--lg animate-pulse-glow"
+							style={{
+								top: '50%',
+								left: '50%',
+								transform: 'translate(-50%, -50%)',
+								width: '70%',
+								height: '70%',
+								filter: 'blur(100px)',
+								opacity: 0.6,
+							}}
+						/>
+
+						{/* Hero mockup frame */}
+						<div className="hero-mockup-frame relative z-content">
+							<div className="hero-mockup-inner">
+								<img
+									src="/screenshots/hero-app.webp"
+									alt="Aether app showing unified calendar, tasks, and goals"
+									className="w-full h-auto block"
+									loading="eager"
+								/>
+							</div>
 						</div>
+
+						{/* Caption under hero image */}
+						<motion.p
+							className="font-text text-center text-sm text-muted-foreground mt-6"
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ duration: 0.6, delay: 0.8 }}
+						>
+							Actually syncs with Google Calendar in real-time.
+						</motion.p>
 					</motion.div>
 				</div>
 			</section>
