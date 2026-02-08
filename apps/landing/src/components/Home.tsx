@@ -809,7 +809,7 @@ export function Home() {
 										target="_blank"
 										rel="noopener noreferrer"
 									>
-										Get Started — Free Forever Plan
+										Join Aether Today
 									</a>
 								</Button>
 							</motion.div>
