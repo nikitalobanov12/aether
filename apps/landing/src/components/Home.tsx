@@ -80,24 +80,21 @@ const pricingPlans = [
 	{
 		name: 'Free',
 		cost: '$0',
-		period: '/forever',
-		features: ['50 tasks', '2 goals', 'Calendar sync', 'Weekly review'],
+		period: '/mo',
+		features: ['50 Tasks / 2 Goals', 'Basic Sync'],
 		highlighted: false,
 	},
 	{
 		name: 'Pro',
 		cost: '$8',
 		period: '/mo',
-		yearlyNote: '($80/yr)',
 		features: [
-			'Unlimited tasks',
-			'Unlimited goals',
-			'Priority support',
-			'Advanced AI features',
-			'Early access to new features',
+			'Unlimited Everything',
+			'Real-time Bi-directional Sync',
+			'Weekly Review & History',
 		],
 		highlighted: true,
-		badge: 'Best Value',
+		comparisonTag: 'Less than half the cost of Sunsama',
 	},
 ];
 
@@ -699,11 +696,8 @@ export function Home() {
 							viewport={{ once: true, margin: '-50px' }}
 						>
 							<h2 className="text-3xl md:text-4xl font-bold mb-4">
-								Premium Tools Shouldn't Cost a Utility Bill.
+								Premium power. Utility pricing.
 							</h2>
-							<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-								Sunsama charges $20/mo. Morgen charges $15/mo. We think that's too much for solo users.
-							</p>
 						</motion.div>
 
 						<div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
@@ -719,18 +713,19 @@ export function Home() {
 										delay: index * 0.1,
 									}}
 									viewport={{ once: true, margin: '-50px' }}
+									className={plan.highlighted ? 'pricing-card-gradient' : ''}
 								>
 									<Card
-										className={`relative h-full ${
+										className={`relative h-full glass-card ${
 											plan.highlighted
-												? 'border-2 border-primary shadow-lg shadow-primary/10'
+												? 'shadow-lg shadow-primary/10'
 												: ''
 										}`}
 									>
-										{plan.badge && (
+										{plan.comparisonTag && (
 											<div className="absolute -top-3 left-1/2 -translate-x-1/2">
-												<Badge className="bg-primary text-primary-foreground">
-													{plan.badge}
+												<Badge className="bg-primary text-primary-foreground whitespace-nowrap text-xs">
+													{plan.comparisonTag}
 												</Badge>
 											</div>
 										)}
@@ -743,11 +738,6 @@ export function Home() {
 														{plan.period}
 													</span>
 												</div>
-												{plan.yearlyNote && (
-													<p className="text-sm text-muted-foreground">
-														{plan.yearlyNote}
-													</p>
-												)}
 											</div>
 
 											<div className="space-y-3 mb-8">

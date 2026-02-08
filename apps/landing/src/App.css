@@ -65,6 +65,18 @@ body::after {
 		inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+/* Pricing card with gradient border for Pro plan */
+.pricing-card-gradient {
+	position: relative;
+	border-radius: var(--radius-lg);
+	padding: 2px;
+	background: linear-gradient(to right, #32B8C6, #7F5AF0);
+}
+
+.pricing-card-gradient > * {
+	border: none !important;
+}
+
 /* ========================================
    Glow Orb Component
    ======================================== */
