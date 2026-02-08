@@ -66,63 +66,6 @@ function useHasMounted() {
 	return hasMounted;
 }
 
-const problemSolutionData = [
-	{
-		id: 'frankenstein',
-		problemTitle: '3 Apps to Do 1 Job',
-		problemQuote:
-			'My goals live in Notion. My tasks in Todoist. My calendar in Google. None of them talk to each other.',
-		solutionTitle: 'One Cohesive Timeline',
-		solutionDescription:
-			'Aether replaces the "Frankenstein Stack." Goals, projects, daily tasks, and your calendar — all in one place. Stop managing your system and start doing the work.',
-	},
-	{
-		id: 'calendar-sync',
-		problemTitle: 'Sync That Creates Duplicates',
-		problemQuote:
-			'Todoist\'s calendar sync is broken. Tasks appear in the app but not in Google Calendar. Or they create duplicates. Every. Single. Time.',
-		solutionTitle: 'Bi-Directional Sync. Zero Duplicates.',
-		solutionDescription:
-			'We didn\'t just "add integration." We rebuilt the sync engine. Change a time in Aether — updates Google Calendar instantly. Complete a task — removes it from your calendar. No ghost tasks.',
-	},
-	{
-		id: 'goals',
-		problemTitle: 'Flat Lists, No Context',
-		problemQuote:
-			'Todoist is a giant flat list. I\'m checking boxes but I have no idea if I\'m making progress on what actually matters.',
-		solutionTitle: 'Goals → Projects → Daily Tasks.',
-		solutionDescription:
-			'Most to-do lists are flat. Aether understands context. Define your Q1 Goals. Break them into Projects. Sequence your Daily Tasks. When you sit down to work, you\'re moving the needle on what matters.',
-	},
-	{
-		id: 'accomplishments',
-		problemTitle: 'Completed Tasks Vanish',
-		problemQuote:
-			'I complete a task and it vanishes into the void. How am I supposed to feel motivated? I have no idea what I did this week.',
-		solutionTitle: 'Don\'t Just Do the Work. See the Work.',
-		solutionDescription:
-			'Aether keeps a "Done" history that feeds into your Weekly Review. See exactly where your time went and end your week feeling accomplished, not drained.',
-	},
-	{
-		id: 'ai-takeover',
-		problemTitle: 'AI That Takes Over Your Day',
-		problemQuote:
-			'Motion\'s AI scheduled my entire day without asking. It put a work block over my lunch break and rearranged my afternoon.',
-		solutionTitle: 'AI That Suggests. Never Decides.',
-		solutionDescription:
-			'You are the boss. The AI is the assistant. We suggest subtasks and help prioritize a heavy day, but we will never auto-schedule over your lunch or rearrange your calendar without permission.',
-	},
-	{
-		id: 'pricing',
-		problemTitle: 'Premium Price for Basic Features',
-		problemQuote:
-			'Sunsama is $20/month. Morgen is $15/month. I\'m paying premium prices for what should be table-stakes features.',
-		solutionTitle: 'Full-Featured for $8/Month.',
-		solutionDescription:
-			'We built Aether for bootstrappers, freelancers, and solo founders. Calendar sync, goal hierarchy, weekly review, optional AI — all for $8/month. Pricing like a utility, not a luxury.',
-	},
-];
-
 const howItWorksSteps = [
 	{ icon: Target, label: 'Define your goals' },
 	{ icon: FolderOpen, label: 'Break into projects' },
@@ -362,76 +305,162 @@ export function Home() {
 					</div>
 				</section>
 
-				{/* Pain Points Section */}
-				<section id="problems" className="py-24 bg-muted/30">
+				{/* Frankenstein Section */}
+				<section id="problems" className="py-24 lg:py-32 bg-muted/30">
 					<div className="container mx-auto px-4">
-						<motion.div
-							className="text-center mb-16"
-							variants={fadeInUp}
-							initial="hidden"
-							whileInView="visible"
-							transition={defaultTransition}
-							viewport={{ once: true, margin: '-50px' }}
-						>
-							<h2 className="text-3xl md:text-4xl font-bold mb-4">
-								Why Are You Using 3 Apps to Do 1 Job?
-							</h2>
-							<p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-								Real frustrations. Real users. We built Aether to fix every one of them.
-							</p>
-						</motion.div>
+						<div className="max-w-4xl mx-auto text-center">
+							{/* Headline */}
+							<motion.h2
+								className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight"
+								variants={fadeInUp}
+								initial="hidden"
+								whileInView="visible"
+								transition={{ ...defaultTransition, duration: 0.7 }}
+								viewport={{ once: true, margin: '-50px' }}
+							>
+								You are trying to run your life with a Frankenstein stack.
+							</motion.h2>
 
-						<div className="space-y-6 max-w-5xl mx-auto">
-							{problemSolutionData.map((item, index) => (
+							{/* Subtext */}
+							<motion.p
+								className="font-text text-lg md:text-xl text-muted-foreground mb-12 max-w-2xl mx-auto leading-relaxed"
+								variants={fadeInUp}
+								initial="hidden"
+								whileInView="visible"
+								transition={{ ...defaultTransition, duration: 0.7, delay: 0.15 }}
+								viewport={{ once: true, margin: '-50px' }}
+							>
+								You have long-term goals in Notion. Daily tasks in Todoist. Meetings in Google Calendar. They don't talk to each other. You spend half your day just moving data around.
+							</motion.p>
+
+							{/* Logo Chain Visual */}
+							<motion.div
+								className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-12"
+								variants={fadeIn}
+								initial="hidden"
+								whileInView="visible"
+								transition={{ ...defaultTransition, duration: 0.8, delay: 0.3 }}
+								viewport={{ once: true, margin: '-50px' }}
+							>
+								{/* Notion placeholder */}
 								<motion.div
-									key={item.id}
-									variants={fadeInUp}
-									initial="hidden"
-									whileInView="visible"
-									transition={{
-										...defaultTransition,
-										duration: 0.5,
-										delay: index * 0.1,
-									}}
-									viewport={{ once: true, margin: '-50px' }}
+									className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl border-2 border-muted-foreground/30 bg-muted/50 grayscale opacity-60"
+									initial={{ opacity: 0, scale: 0.8 }}
+									whileInView={{ opacity: 0.6, scale: 1 }}
+									transition={{ duration: 0.4, delay: 0.4 }}
+									viewport={{ once: true }}
 								>
-									<Card className="overflow-hidden">
-										<div className="grid md:grid-cols-2">
-											{/* Problem side - red tint */}
-											<div className="p-6 md:p-8 bg-red-500/5 border-r border-border/50">
-												<div className="flex items-center gap-2 mb-3">
-													<div className="h-2 w-2 rounded-full bg-red-500" />
-													<span className="text-xs font-medium uppercase tracking-wider text-red-600 dark:text-red-400">
-														Problem
-													</span>
-												</div>
-												<h3 className="text-lg font-semibold mb-3 text-red-700 dark:text-red-300">
-													{item.problemTitle}
-												</h3>
-												<p className="text-muted-foreground italic text-sm leading-relaxed">
-													"{item.problemQuote}"
-												</p>
-											</div>
-
-											{/* Solution side - teal tint */}
-											<div className="p-6 md:p-8 bg-teal-500/5">
-												<div className="flex items-center gap-2 mb-3">
-													<div className="h-2 w-2 rounded-full bg-teal-500" />
-													<span className="text-xs font-medium uppercase tracking-wider text-teal-600 dark:text-teal-400">
-														Solution
-													</span>
-												</div>
-												<h3 className="text-lg font-semibold mb-3 text-teal-700 dark:text-teal-300">
-													{item.solutionTitle}
-												</h3>
-												<p className="text-muted-foreground text-sm leading-relaxed">
-													{item.solutionDescription}
-												</p>
-											</div>
-										</div>
-									</Card>
+									<span className="text-xs md:text-sm font-semibold text-muted-foreground">N</span>
 								</motion.div>
-							))}
+
+								{/* Broken link */}
+								<motion.svg
+									className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground/50"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									initial={{ opacity: 0 }}
+									whileInView={{ opacity: 1 }}
+									transition={{ duration: 0.3, delay: 0.5 }}
+									viewport={{ once: true }}
+								>
+									<path d="M9 17H7A5 5 0 0 1 7 7" />
+									<path d="M15 7h2a5 5 0 0 1 4 8" />
+									<line x1="8" y1="12" x2="12" y2="12" />
+								</motion.svg>
+
+								{/* Todoist placeholder */}
+								<motion.div
+									className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl border-2 border-muted-foreground/30 bg-muted/50 grayscale opacity-60"
+									initial={{ opacity: 0, scale: 0.8 }}
+									whileInView={{ opacity: 0.6, scale: 1 }}
+									transition={{ duration: 0.4, delay: 0.55 }}
+									viewport={{ once: true }}
+								>
+									<span className="text-xs md:text-sm font-semibold text-muted-foreground">T</span>
+								</motion.div>
+
+								{/* Broken link */}
+								<motion.svg
+									className="w-6 h-6 md:w-8 md:h-8 text-muted-foreground/50"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									initial={{ opacity: 0 }}
+									whileInView={{ opacity: 1 }}
+									transition={{ duration: 0.3, delay: 0.65 }}
+									viewport={{ once: true }}
+								>
+									<path d="M9 17H7A5 5 0 0 1 7 7" />
+									<path d="M15 7h2a5 5 0 0 1 4 8" />
+									<line x1="8" y1="12" x2="12" y2="12" />
+								</motion.svg>
+
+								{/* GCal placeholder */}
+								<motion.div
+									className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl border-2 border-muted-foreground/30 bg-muted/50 grayscale opacity-60"
+									initial={{ opacity: 0, scale: 0.8 }}
+									whileInView={{ opacity: 0.6, scale: 1 }}
+									transition={{ duration: 0.4, delay: 0.7 }}
+									viewport={{ once: true }}
+								>
+									<span className="text-xs md:text-sm font-semibold text-muted-foreground">G</span>
+								</motion.div>
+
+								{/* Arrow to Aether */}
+								<motion.svg
+									className="w-8 h-8 md:w-10 md:h-10 text-primary mx-2"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2.5"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									initial={{ opacity: 0, x: -10 }}
+									whileInView={{ opacity: 1, x: 0 }}
+									transition={{ duration: 0.5, delay: 0.85 }}
+									viewport={{ once: true }}
+								>
+									<line x1="5" y1="12" x2="19" y2="12" />
+									<polyline points="12 5 19 12 12 19" />
+								</motion.svg>
+
+								{/* Aether logo - glowing */}
+								<motion.div
+									className="relative"
+									initial={{ opacity: 0, scale: 0.8 }}
+									whileInView={{ opacity: 1, scale: 1 }}
+									transition={{ duration: 0.5, delay: 0.95 }}
+									viewport={{ once: true }}
+								>
+									<div className="absolute inset-0 bg-primary/30 rounded-xl blur-lg" />
+									<div className="relative flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-xl border-2 border-primary bg-background shadow-lg shadow-primary/20">
+										<img
+											src="/favicon.svg"
+											alt="Aether"
+											className="h-8 w-8 md:h-9 md:w-9"
+										/>
+									</div>
+								</motion.div>
+							</motion.div>
+
+							{/* Pivot statement */}
+							<motion.p
+								className="text-xl md:text-2xl font-semibold text-foreground"
+								variants={fadeInUp}
+								initial="hidden"
+								whileInView="visible"
+								transition={{ ...defaultTransition, duration: 0.7, delay: 0.5 }}
+								viewport={{ once: true, margin: '-50px' }}
+							>
+								It's time to stop being a "Project Manager" for your own life.
+							</motion.p>
 						</div>
 					</div>
 				</section>
