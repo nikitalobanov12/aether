@@ -1,13 +1,8 @@
 @import 'tailwindcss';
 
 /* Custom styles for Aether landing page */
-html {
-	scroll-behavior: smooth;
-	overflow-x: hidden;
-}
-
 body {
-	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+	font-family: var(--font-sans);
 	overflow-x: hidden;
 }
 
@@ -60,11 +55,6 @@ body {
 }
 
 .glass-card-elevated {
-	background: var(--glass-bg);
-	backdrop-filter: blur(var(--glass-blur));
-	-webkit-backdrop-filter: blur(var(--glass-blur));
-	border: 1px solid var(--glass-border);
-	border-radius: var(--radius-lg);
 	box-shadow:
 		0 8px 32px rgba(0, 0, 0, 0.4),
 		0 0 80px rgba(50, 184, 198, 0.08),
@@ -182,9 +172,8 @@ button {
    ======================================== */
 
 * {
-	scroll-behavior: smooth;
 	scrollbar-width: thin;
-	scrollbar-color: #333333 var(--background);
+	scrollbar-color: var(--border) var(--background);
 }
 
 *::-webkit-scrollbar {
@@ -198,17 +187,12 @@ button {
 }
 
 *::-webkit-scrollbar-thumb {
-	background: #333333;
+	background: var(--border);
 	border-radius: 4px;
-	transition: background-color 0.2s ease;
-}
-
-*:hover::-webkit-scrollbar-thumb {
-	background: #444444;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-	background: #555555;
+	background: var(--muted-foreground);
 }
 
 /* ========================================
@@ -284,4 +268,16 @@ button {
 
 .z-content {
 	z-index: 10;
+}
+
+/* ========================================
+   Accessibility: Reduced Motion
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	.animate-float,
+	.animate-float-delayed,
+	.animate-pulse-glow {
+		animation: none;
+	}
 }

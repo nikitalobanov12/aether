@@ -41,26 +41,7 @@
 	--glow-secondary: rgba(127, 90, 240, 0.4);
 }
 
-.dark {
-	--background: #050505;
-	--foreground: #fafafa;
-	--card: #0F0F0F;
-	--card-foreground: #fafafa;
-	--popover: #0F0F0F;
-	--popover-foreground: #fafafa;
-	--primary: #32B8C6;
-	--primary-foreground: #050505;
-	--secondary: #7F5AF0;
-	--secondary-foreground: #fafafa;
-	--muted: #1a1a1a;
-	--muted-foreground: #888888;
-	--accent: #7F5AF0;
-	--accent-foreground: #fafafa;
-	--destructive: #ef4444;
-	--border: #1a1a1a;
-	--input: #1a1a1a;
-	--ring: #32B8C6;
-}
+/* .dark class inherits from :root - dark is the default theme */
 
 @theme inline {
 	--font-display: var(--font-display);
