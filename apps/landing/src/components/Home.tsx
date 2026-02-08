@@ -74,14 +74,7 @@ const howItWorksSteps = [
 	{ icon: CheckCircle2, label: 'Review progress weekly' },
 ];
 
-const keyFeatures = [
-	'Bi-directional Google Calendar sync',
-	'"Next Up" task sequencing',
-	'Goals → Projects → Tasks hierarchy',
-	'Weekly review + completion history',
-	'AI that suggests, never decides',
-	'$8/mo — not $20',
-];
+
 
 const pricingPlans = [
 	{
@@ -509,7 +502,7 @@ export function Home() {
 					</div>
 				</section>
 
-				{/* Key Features Section */}
+				{/* Key Features Section - Bento Grid */}
 				<section id="features" className="py-24 bg-muted/30">
 					<div className="container mx-auto px-4">
 						<motion.div
@@ -525,30 +518,113 @@ export function Home() {
 							</h2>
 						</motion.div>
 
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
-							{keyFeatures.map((feature, index) => (
+						{/* Bento Grid Container */}
+						<div className="glass-card p-4 md:p-6 max-w-5xl mx-auto">
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+								{/* Sync Card - Large, spans 2 columns */}
 								<motion.div
-									key={feature}
+									className="md:col-span-2 glass-card p-6 md:p-8 flex flex-col justify-between min-h-[280px]"
 									variants={fadeInUp}
 									initial="hidden"
 									whileInView="visible"
-									transition={{
-										...defaultTransition,
-										duration: 0.4,
-										delay: index * 0.08,
-									}}
+									transition={{ ...defaultTransition, duration: 0.5, delay: 0 }}
 									viewport={{ once: true, margin: '-50px' }}
 								>
-									<Card className="h-full">
-										<CardContent className="p-4 flex items-center gap-3">
-											<div className="flex-shrink-0">
-												<Check className="h-5 w-5 text-primary" />
+									<div>
+										<h3 className="text-2xl md:text-3xl font-bold mb-3">
+											Bidirectional Sync. Zero Delays.
+										</h3>
+										<p className="font-text text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg">
+											Create a task in Aether and it appears in Google Calendar instantly. Move a meeting in GCal and your task list updates. No lag, no conflicts, no manual refresh.
+										</p>
+									</div>
+									{/* Micro-UI: Calendar icon with sync arrows and green check */}
+									<div className="flex items-center gap-4 mt-6">
+										<div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50 border border-border/50">
+											<Calendar className="h-5 w-5 text-muted-foreground" />
+											<svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+												<path d="M7 16V4M7 4L3 8M7 4l4 4" />
+												<path d="M17 8v12m0 0 4-4m-4 4-4-4" />
+											</svg>
+											<div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+												<Check className="h-3.5 w-3.5 text-primary" />
 											</div>
-											<span className="text-sm font-medium">{feature}</span>
-										</CardContent>
-									</Card>
+										</div>
+										<span className="text-sm font-medium text-muted-foreground italic">
+											It just works.
+										</span>
+									</div>
 								</motion.div>
-							))}
+
+								{/* Stacked Column - Hierarchy & Motivation */}
+								<div className="flex flex-col gap-4 md:gap-6">
+									{/* Hierarchy Card */}
+									<motion.div
+										className="glass-card p-5 md:p-6 flex-1 min-h-[130px] flex flex-col justify-between"
+										variants={fadeInUp}
+										initial="hidden"
+										whileInView="visible"
+										transition={{ ...defaultTransition, duration: 0.5, delay: 0.1 }}
+										viewport={{ once: true, margin: '-50px' }}
+									>
+										<div>
+											<h3 className="text-lg md:text-xl font-bold mb-2">
+												Goals → Projects → Tasks.
+											</h3>
+											<p className="font-text text-muted-foreground text-sm leading-relaxed">
+												Everything connects. See how today's work ladders up to what actually matters.
+											</p>
+										</div>
+										{/* Micro-UI: Goals tree visualization */}
+										<div className="flex items-center gap-2 mt-4">
+											<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+												<Target className="h-4 w-4 text-primary" />
+												<span className="text-foreground font-medium">Goal</span>
+												<span className="text-muted-foreground/60">→</span>
+												<FolderOpen className="h-3.5 w-3.5" />
+												<span className="text-muted-foreground/60">→</span>
+												<ListTodo className="h-3.5 w-3.5" />
+											</div>
+										</div>
+									</motion.div>
+
+									{/* Motivation Card */}
+									<motion.div
+										className="glass-card p-5 md:p-6 flex-1 min-h-[130px] flex flex-col justify-between"
+										variants={fadeInUp}
+										initial="hidden"
+										whileInView="visible"
+										transition={{ ...defaultTransition, duration: 0.5, delay: 0.2 }}
+										viewport={{ once: true, margin: '-50px' }}
+									>
+										<div>
+											<h3 className="text-lg md:text-xl font-bold mb-2">
+												Visual Momentum.
+											</h3>
+											<p className="font-text text-muted-foreground text-sm leading-relaxed">
+												See your completed tasks stack up. Weekly reviews show you how far you've come.
+											</p>
+										</div>
+										{/* Micro-UI: Done history strip */}
+										<div className="flex items-center gap-1.5 mt-4">
+											{[...Array(7)].map((_, i) => (
+												<div
+													key={i}
+													className={`h-6 w-3 rounded-sm ${
+														i < 5
+															? 'bg-primary/80'
+															: i === 5
+																? 'bg-primary/40'
+																: 'bg-muted-foreground/20'
+													}`}
+													title={i < 5 ? 'Completed' : i === 5 ? 'In progress' : 'Upcoming'}
+												/>
+											))}
+											<span className="text-xs text-muted-foreground ml-2">This week</span>
+										</div>
+									</motion.div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</section>
