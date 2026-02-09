@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { api } from "~/trpc/react";
 
 type Theme = "light" | "dark" | "system";
@@ -46,11 +46,18 @@ function getStoredTheme(): Theme {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Query user preferences — will fail for unauthenticated users, which is fine
+  const [mounted, setMounted] = useState(false);
+  
+  // Only run tRPC query after mounting to avoid SSR issues
   const { data: preferences } = api.userPreferences.get.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: mounted, // Only run query after mount
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const theme: Theme = (preferences?.theme as Theme) ?? getStoredTheme();
 
@@ -64,11 +71,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Apply theme whenever it changes
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    if (mounted) {
+      applyTheme(theme);
+    }
+  }, [theme, mounted]);
 
   // Listen for system theme changes
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     mediaQuery.addEventListener("change", handleSystemThemeChange);
     return () => {

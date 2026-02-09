@@ -6,8 +6,8 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  // Disable static generation for pages that use client-side features
-  output: 'standalone',
+  // Extend static page generation timeout
+  staticPageGenerationTimeout: 120,
 };
 
 export default config;
