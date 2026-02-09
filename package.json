@@ -1,22 +1,21 @@
 {
-  "name": "aether-monorepo",
+  "name": "aether",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "build": "bun run --filter '*' build",
-    "dev": "bun run --filter '*' dev",
-    "lint": "bun run --filter '*' lint",
-    "typecheck": "bun run --filter '*' typecheck",
-    "clean": "bun run --filter '*' clean && rm -rf node_modules",
-    "web:dev": "bun run --filter '@aether/web' dev",
-    "web:build": "bun run --filter '@aether/web' build",
-    "landing:dev": "bun run --filter '@aether/landing' dev",
-    "landing:build": "bun run --filter '@aether/landing' build"
+    "build": "cd apps/web && bun run build",
+    "dev": "cd apps/web && bun run dev",
+    "lint": "cd apps/web && bun run lint",
+    "typecheck": "cd apps/web && bun run typecheck",
+    "check": "cd apps/web && bun run check",
+    "db:generate": "cd apps/web && bun run db:generate",
+    "db:migrate": "cd apps/web && bun run db:migrate",
+    "db:push": "cd apps/web && bun run db:push",
+    "db:studio": "cd apps/web && bun run db:studio",
+    "test": "cd apps/web && bun run test",
+    "test:run": "cd apps/web && bun run test:run",
+    "clean": "rm -rf node_modules apps/web/node_modules apps/web/.next"
   },
   "devDependencies": {
     "typescript": "^5.8.0"

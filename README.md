@@ -1,72 +1,77 @@
-# Aether Monorepo
+# Aether
 
-A unified workspace for the Aether project - a task planner that syncs calendar, tasks, and life goals in one unified system.
+A task planner that syncs calendar, tasks, and life goals in one unified system.
 
-## Apps
+## Structure
 
-| App | Description | URL |
-|-----|-------------|-----|
-| [`apps/web`](./apps/web) | Next.js web application | app.aethertask.com |
-| [`apps/landing`](./apps/landing) | Vite landing page | aethertask.com |
+This is a consolidated Next.js application with:
 
-## Packages
-
-| Package | Description |
-|---------|-------------|
-| [`packages/ui`](./packages/ui) | Shared shadcn/ui components |
-| [`packages/docs`](./packages/docs) | Unified documentation |
+- **Landing page** (`/`) - Marketing site with features, pricing, etc.
+- **Auth** (`/login`) - Sign in / sign up
+- **App** (`/today`, `/week`, `/calendar`, etc.) - The main dashboard
+- **Legal** (`/privacy-policy`, `/terms-of-service`)
 
 ## Quick Start
 
 ```bash
-# Install dependencies for all packages
+# Install dependencies
 bun install
 
-# Run web app
-bun run web:dev
-
-# Run landing page
-bun run landing:dev
-
-# Run both
+# Run dev server (with DB)
 bun run dev
+
+# Run dev server (without DB check)
+cd apps/web && bun run dev:next
+
+# Build for production
+bun run build
 ```
 
 ## Development
 
-This monorepo uses Bun workspaces for package management.
+The app is located in `apps/web/` and uses:
+- Next.js 15 with App Router
+- tRPC for API
+- Drizzle ORM with PostgreSQL
+- Better Auth for authentication
+- Tailwind CSS + shadcn/ui
 
-### Workspace Commands
+### Database
 
 ```bash
-# Run command in all packages
-bun run --filter '*' <command>
+# Start local PostgreSQL
+bun run db:start
 
-# Run command in specific package
-bun run --filter '@aether/web' <command>
+# Generate migrations
+bun run db:generate
+
+# Run migrations
+bun run db:migrate
+
+# Open Drizzle Studio
+bun run db:studio
 ```
-
-### Adding UI Components
-
-UI components are shared in `packages/ui`. To add a new component:
-
-1. Add it to `packages/ui/src/components/`
-2. Export it from `packages/ui/src/index.ts`
-3. Import in apps via `import { Button } from '@aether/ui'`
 
 ## Deployment
 
-### Vercel Configuration
+### Vercel
 
-Both apps deploy from this single repo:
+Deploy from the root of the repository:
 
-- **Web**: Deploy from `apps/web` directory → `app.aethertask.com`
-- **Landing**: Deploy from `apps/landing` directory → `aethertask.com`
+1. Connect GitHub repo to Vercel
+2. Framework preset: Next.js
+3. Root directory: `apps/web` (or leave as default if deploying from root)
+4. Build command: `next build`
+5. Install command: `bun install`
 
-Configure in Vercel dashboard:
-1. Add project
-2. Set root directory to `apps/web` or `apps/landing`
-3. Framework preset: Next.js (web) or Vite (landing)
+### Environment Variables
+
+Copy `apps/web/.env.example` to `apps/web/.env` and fill in:
+
+- `DATABASE_URL` - PostgreSQL connection string
+- `BETTER_AUTH_SECRET` - Random 32+ character string
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - Google OAuth
+- `STRIPE_SECRET_KEY` - Stripe payments (optional)
 
 ---
 

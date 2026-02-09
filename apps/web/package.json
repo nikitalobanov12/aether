@@ -28,8 +28,6 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@aether/docs": "workspace:*",
-    "@aether/ui": "workspace:*",
     "@auth/drizzle-adapter": "^1.7.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -63,6 +61,7 @@
     "drizzle-orm": "^0.41.0",
     "googleapis": "^170.1.0",
     "lucide-react": "^0.562.0",
+    "motion": "^12.15.0",
     "next": "^15.2.3",
     "postgres": "^3.4.4",
     "react": "^19.0.0",
