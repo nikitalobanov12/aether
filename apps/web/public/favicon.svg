@@ -1,0 +1,38 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: soft rounded square -->
+  <rect width="1024" height="1024" rx="224" fill="#F8FAFB"/>
+  
+  <defs>
+    <!-- Teal gradient: bottom to top -->
+    <linearGradient id="tealGradient" x1="512" y1="820" x2="512" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2A9EAE"/>
+      <stop offset="100%" stop-color="#32B8C6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Geometric A: clean triangular form with crossbar cutout -->
+  <!-- Outer A shape -->
+  <path d="
+    M 512 180
+    Q 532 180 545 210
+    L 780 750
+    Q 795 780 775 805
+    Q 755 830 720 830
+    L 640 830
+    Q 605 830 590 800
+    L 555 720
+    L 469 720
+    L 434 800
+    Q 419 830 384 830
+    L 304 830
+    Q 269 830 249 805
+    Q 229 780 244 750
+    L 479 210
+    Q 492 180 512 180
+    Z
+    M 512 380
+    L 430 570
+    L 594 570
+    Z
+  " fill="url(#tealGradient)" fill-rule="evenodd"/>
+</svg>

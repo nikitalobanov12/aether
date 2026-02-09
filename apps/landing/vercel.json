@@ -1,8 +1,13 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "tsc -b && vite build",
+  "devCommand": "vite",
+  "installCommand": "bun install",
+  "framework": null,
   "rewrites": [
     {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
   ]
-} 
+}
