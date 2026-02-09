@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
@@ -532,7 +534,7 @@ export default function LandingPage() {
 										</div>
 										{/* Micro-UI: Done history strip */}
 										<div className="flex items-center gap-1.5 mt-4">
-											{[...Array(7)].map((_, i) => (
+											{Array.from({ length: 7 }).map((_, i) => (
 												<div
 													key={i}
 													className={`h-6 w-3 rounded-sm ${
