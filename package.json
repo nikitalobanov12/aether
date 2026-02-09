@@ -4,20 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cd apps/web && bun run build",
-    "dev": "cd apps/web && bun run dev",
-    "lint": "cd apps/web && bun run lint",
-    "typecheck": "cd apps/web && bun run typecheck",
-    "check": "cd apps/web && bun run check",
-    "db:generate": "cd apps/web && bun run db:generate",
-    "db:migrate": "cd apps/web && bun run db:migrate",
-    "db:push": "cd apps/web && bun run db:push",
-    "db:studio": "cd apps/web && bun run db:studio",
-    "test": "cd apps/web && bun run test",
-    "test:run": "cd apps/web && bun run test:run",
-    "clean": "rm -rf node_modules apps/web/node_modules apps/web/.next"
+    "build": "cd apps/web && next build",
+    "dev": "cd apps/web && next dev",
+    "lint": "cd apps/web && next lint",
+    "typecheck": "cd apps/web && tsc --noEmit"
   },
-  "devDependencies": {
-    "typescript": "^5.8.0"
+  "dependencies": {
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }
