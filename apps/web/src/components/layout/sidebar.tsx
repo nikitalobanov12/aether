@@ -13,6 +13,7 @@ import {
   ChevronRight,
   FolderKanban,
   BarChart3,
+  Home,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -45,6 +46,7 @@ interface SidebarProps {
 }
 
 const mainNavigation = [
+  { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Today", href: "/today", icon: Sun },
   { name: "This Week", href: "/week", icon: CalendarDays },
   { name: "Insights", href: "/insights", icon: BarChart3 },
@@ -60,55 +62,65 @@ function NavLinks({ onItemClick }: { onItemClick?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-1 px-3">
       {/* Main navigation */}
-      {mainNavigation.map((item) => {
-        const isActive = pathname === item.href;
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            {item.name}
-          </Link>
-        );
-      })}
+      <div className="mb-2">
+        <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Plan
+        </p>
+        {mainNavigation.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={onItemClick}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className={cn("h-5 w-5", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+              {item.name}
+            </Link>
+          );
+        })}
+      </div>
 
       {/* Goals tree */}
       <GoalsTree onItemClick={onItemClick} />
 
       {/* Divider */}
-      <div className="my-2 border-t" />
+      <div className="my-3 border-t border-border/50" />
 
       {/* Secondary navigation */}
-      {secondaryNavigation.map((item) => {
-        const isActive =
-          pathname === item.href || pathname.startsWith(item.href + "/");
-        return (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={onItemClick}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            {item.name}
-          </Link>
-        );
-      })}
+      <div>
+        <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Organize
+        </p>
+        {secondaryNavigation.map((item) => {
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={onItemClick}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                isActive
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              {item.name}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }
@@ -137,99 +149,112 @@ function GoalsTree({ onItemClick }: { onItemClick?: () => void }) {
   if (goals.length === 0) return null;
 
   return (
-    <div className="mt-2 space-y-1">
-      <div className="text-muted-foreground px-3 py-1 text-xs font-semibold tracking-wider uppercase">
+    <div className="mt-2">
+      <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         Goals
-      </div>
-      {goals.slice(0, 5).map((goal) => {
-        const isExpanded = expandedGoals.has(goal.id);
-        const hasProjects = goal.projects.length > 0;
+      </p>
+      <div className="space-y-1">
+        {goals.slice(0, 5).map((goal) => {
+          const isExpanded = expandedGoals.has(goal.id);
+          const hasProjects = goal.projects.length > 0;
+          const progress = goal.totalTaskCount > 0 
+            ? Math.round((goal.completedTaskCount / goal.totalTaskCount) * 100) 
+            : 0;
 
-        return (
-          <Collapsible
-            key={goal.id}
-            open={isExpanded}
-            onOpenChange={() => toggleGoal(goal.id)}
-          >
-            <div className="flex items-center">
-              {hasProjects ? (
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 flex-shrink-0"
-                  >
-                    <ChevronRight
-                      className={cn(
-                        "h-3 w-3 transition-transform",
-                        isExpanded && "rotate-90",
-                      )}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-              ) : (
-                <div className="w-6" />
-              )}
-              <Link
-                href="/goals"
-                onClick={onItemClick}
-                className={cn(
-                  "text-muted-foreground hover:bg-muted hover:text-foreground flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                )}
-              >
-                <Target className="h-4 w-4" />
-                <span className="truncate">{goal.title}</span>
-                <span className="text-muted-foreground ml-auto text-xs">
-                  {goal.completedTaskCount}/{goal.totalTaskCount}
-                </span>
-              </Link>
-            </div>
-
-            {hasProjects && (
-              <CollapsibleContent>
-                <div className="ml-6 space-y-0.5 border-l pl-2">
-                  {goal.projects.map((project) => {
-                    const isActive = pathname === `/projects/${project.id}`;
-                    const completedCount = project.tasks.filter(
-                      (t) => t.status === "completed",
-                    ).length;
-                    const totalCount = project.tasks.length;
-
-                    return (
-                      <Link
-                        key={project.id}
-                        href={`/projects/${project.id}`}
-                        onClick={onItemClick}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
-                          isActive
-                            ? "bg-muted text-foreground font-medium"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                        )}
+          return (
+            <Collapsible
+              key={goal.id}
+              open={isExpanded}
+              onOpenChange={() => toggleGoal(goal.id)}
+            >
+              <div className="group">
+                <div className="flex items-center">
+                  {hasProjects ? (
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 flex-shrink-0 hover:bg-muted"
                       >
-                        <FolderKanban className="h-3.5 w-3.5" />
-                        <span className="truncate">{project.title}</span>
-                        <span className="text-muted-foreground ml-auto text-xs">
-                          {completedCount}/{totalCount}
-                        </span>
-                      </Link>
-                    );
-                  })}
+                        <ChevronRight
+                          className={cn(
+                            "h-4 w-4 text-muted-foreground transition-transform",
+                            isExpanded && "rotate-90"
+                          )}
+                        />
+                      </Button>
+                    </CollapsibleTrigger>
+                  ) : (
+                    <div className="w-7" />
+                  )}
+                  <Link
+                    href="/goals"
+                    onClick={onItemClick}
+                    className="flex flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted group-hover:text-foreground"
+                  >
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                    <span className="truncate text-muted-foreground group-hover:text-foreground">{goal.title}</span>
+                    <span className="text-muted-foreground ml-auto text-xs">
+                      {progress}%
+                    </span>
+                  </Link>
                 </div>
-              </CollapsibleContent>
-            )}
-          </Collapsible>
-        );
-      })}
-      {goals.length > 5 && (
-        <Link
-          href="/goals"
-          onClick={onItemClick}
-          className="text-muted-foreground hover:text-foreground block px-3 py-1 text-xs"
-        >
-          View all {goals.length} goals...
-        </Link>
-      )}
+
+                {/* Progress bar */}
+                <div className="ml-9 mr-2 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary/60 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+
+                {hasProjects && (
+                  <CollapsibleContent>
+                    <div className="ml-7 space-y-0.5 border-l border-border/50 pl-3 mt-1">
+                      {goal.projects.map((project) => {
+                        const isActive = pathname === `/projects/${project.id}`;
+                        const completedCount = project.tasks.filter(
+                          (t) => t.status === "completed",
+                        ).length;
+                        const totalCount = project.tasks.length;
+
+                        return (
+                          <Link
+                            key={project.id}
+                            href={`/projects/${project.id}`}
+                            onClick={onItemClick}
+                            className={cn(
+                              "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors",
+                              isActive
+                                ? "bg-muted text-foreground font-medium"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            <FolderKanban className="h-3.5 w-3.5" />
+                            <span className="truncate">{project.title}</span>
+                            <span className="text-muted-foreground ml-auto text-xs">
+                              {completedCount}/{totalCount}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                )}
+              </div>
+            </Collapsible>
+          );
+        })}
+        {goals.length > 5 && (
+          <Link
+            href="/goals"
+            onClick={onItemClick}
+            className="block px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            View all {goals.length} goals...
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
@@ -245,11 +270,11 @@ function UserMenu({ user }: { user: SidebarProps["user"] }) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-auto w-full justify-start gap-3 px-3 py-2"
+          className="h-auto w-full justify-start gap-3 px-3 py-2.5 hover:bg-muted rounded-xl"
         >
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-8 w-8 border border-border/50">
             <AvatarImage src={user.image ?? undefined} alt={user.name} />
-            <AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary text-sm">
               {user.name
                 .split(" ")
                 .map((n) => n[0])
@@ -257,9 +282,9 @@ function UserMenu({ user }: { user: SidebarProps["user"] }) {
                 .toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-col items-start text-left">
-            <span className="text-sm font-medium">{user.name}</span>
-            <span className="text-muted-foreground text-xs">{user.email}</span>
+          <div className="flex flex-col items-start text-left overflow-hidden">
+            <span className="text-sm font-medium truncate w-full">{user.name}</span>
+            <span className="text-muted-foreground text-xs truncate w-full">{user.email}</span>
           </div>
         </Button>
       </DropdownMenuTrigger>
@@ -282,24 +307,27 @@ function UserMenu({ user }: { user: SidebarProps["user"] }) {
 
 export function Sidebar({ user }: SidebarProps) {
   return (
-    <aside className="bg-background hidden w-64 flex-col border-r md:flex">
+    <aside className="hidden w-72 flex-col border-r border-border/50 bg-sidebar md:flex">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
-        <Link href="/today" className="flex items-center gap-2">
-          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-            <span className="text-primary-foreground text-lg font-bold">A</span>
+      <div className="flex h-16 items-center border-b border-border/50 px-6">
+        <Link href="/today" className="flex items-center gap-3 group">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/30 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative bg-primary h-9 w-9 flex items-center justify-center rounded-xl shadow-sm">
+              <span className="text-primary-foreground text-lg font-bold font-display">A</span>
+            </div>
           </div>
-          <span className="text-xl font-bold">Aether</span>
+          <span className="font-display text-xl tracking-tight">Aether</span>
         </Link>
       </div>
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
+      <ScrollArea className="flex-1 py-4">
         <NavLinks />
       </ScrollArea>
 
       {/* User menu */}
-      <div className="border-t p-3">
+      <div className="border-t border-border/50 p-4">
         <UserMenu user={user} />
       </div>
     </aside>
@@ -313,34 +341,32 @@ export function MobileNav({ user }: SidebarProps) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-6 w-6" />
+          <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 p-0">
+      <SheetContent side="left" className="w-72 p-0">
         {/* Logo */}
-        <div className="flex h-16 items-center border-b px-6">
+        <div className="flex h-16 items-center border-b border-border/50 px-6">
           <Link
             href="/today"
-            className="flex items-center gap-2"
+            className="flex items-center gap-3"
             onClick={() => setOpen(false)}
           >
-            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-              <span className="text-primary-foreground text-lg font-bold">
-                A
-              </span>
+            <div className="bg-primary h-9 w-9 flex items-center justify-center rounded-xl">
+              <span className="text-primary-foreground text-lg font-bold font-display">A</span>
             </div>
-            <span className="text-xl font-bold">Aether</span>
+            <span className="font-display text-xl tracking-tight">Aether</span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 px-3 py-4">
+        <ScrollArea className="flex-1 py-4">
           <NavLinks onItemClick={() => setOpen(false)} />
         </ScrollArea>
 
         {/* User menu */}
-        <div className="border-t p-3">
+        <div className="border-t border-border/50 p-4">
           <UserMenu user={user} />
         </div>
       </SheetContent>
@@ -350,13 +376,13 @@ export function MobileNav({ user }: SidebarProps) {
 
 export function TopBar({ user }: SidebarProps) {
   return (
-    <header className="bg-background flex h-16 items-center justify-between border-b px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 md:px-6">
       <div className="flex items-center gap-4">
         <MobileNav user={user} />
-        {/* Page title could go here */}
+        {/* Breadcrumb or page title could go here */}
       </div>
       <div className="flex items-center gap-4">
-        {/* Add notifications, quick actions, etc. here */}
+        {/* Notifications, search, etc. could go here */}
       </div>
     </header>
   );

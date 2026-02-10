@@ -1,7 +1,7 @@
 import "~/styles/globals.css";
 
 import { type Metadata, type Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Cal_Sans, Manrope, JetBrains_Mono } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/components/providers/theme-provider";
@@ -62,16 +62,33 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-const geist = Geist({
+// Display font - Cal Sans (rounded, warm, distinctive)
+const calSans = Cal_Sans({
   subsets: ["latin"],
-  variable: "--font-geist-sans",
+  weight: "400",
+  variable: "--font-display",
+  display: "swap",
+});
+
+// Body font - Manrope (humanist, warm, highly readable)
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+// Mono font - JetBrains Mono (clear, technical, distinctive)
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={geist.variable} suppressHydrationWarning>
+    <html lang="en" className={`${calSans.variable} ${manrope.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
