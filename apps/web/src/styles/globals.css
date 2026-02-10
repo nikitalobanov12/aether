@@ -207,31 +207,64 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Typography hierarchy */
+  /* -------------------------------------------------------------------------
+     EDITORIAL TYPOGRAPHY SYSTEM
+     Bold hierarchy, dramatic contrasts, refined spacing
+     ------------------------------------------------------------------------- */
+  
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
   }
   
+  /* Hero / Page Title - Dramatic statement */
   h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl;
-    line-height: 1.1;
+    @apply text-5xl md:text-6xl lg:text-7xl;
+    line-height: 1.0;
+    font-weight: 600;
   }
   
+  /* Section Header - Bold but restrained */
   h2 {
     @apply text-3xl md:text-4xl lg:text-5xl;
-    line-height: 1.15;
+    line-height: 1.1;
+    font-weight: 500;
   }
   
+  /* Subsection - Confident */
   h3 {
     @apply text-2xl md:text-3xl;
-    line-height: 1.2;
+    line-height: 1.15;
+    font-weight: 500;
   }
   
+  /* Card/Component titles */
   h4 {
     @apply text-xl md:text-2xl;
-    line-height: 1.25;
+    line-height: 1.2;
+    font-weight: 500;
+  }
+  
+  /* Small headers */
+  h5 {
+    @apply text-lg;
+    line-height: 1.3;
+    font-weight: 500;
+  }
+  
+  h6 {
+    @apply text-base;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  
+  /* Body text - refined reading experience */
+  p {
+    line-height: 1.65;
+    letter-spacing: 0.01em;
   }
   
   /* Selection styling */
@@ -449,6 +482,117 @@
       oklch(0.7 0.1 45) 0%,
       oklch(0.68 0.12 175) 100%
     );
+  }
+  
+  /* -------------------------------------------------------------------------
+     Editorial Typography Utilities
+     For magazine-style layouts with dramatic hierarchy
+     ------------------------------------------------------------------------- */
+  
+  /* Display sizes - for hero text */
+  .text-display-xl {
+    @apply text-6xl md:text-7xl lg:text-8xl;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    font-weight: 600;
+  }
+  
+  .text-display-lg {
+    @apply text-5xl md:text-6xl lg:text-7xl;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+  }
+  
+  .text-display {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+  }
+  
+  /* Editorial headline - striking but not overwhelming */
+  .text-headline {
+    @apply text-3xl md:text-4xl;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    font-weight: 500;
+  }
+  
+  /* Subheadline - secondary hierarchy */
+  .text-subheadline {
+    @apply text-xl md:text-2xl;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+  
+  /* Eyebrow / Label - small uppercase for categorization */
+  .text-eyebrow {
+    @apply text-xs uppercase tracking-widest;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+  }
+  
+  /* Pull quote - for emphasis */
+  .text-pullquote {
+    @apply text-2xl md:text-3xl italic;
+    line-height: 1.3;
+    font-weight: 300;
+  }
+  
+  /* Caption - small, refined */
+  .text-caption {
+    @apply text-sm;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+  
+  /* Tight tracking for numbers/data */
+  .text-tabular {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  
+  /* -------------------------------------------------------------------------
+     Editorial Layout Utilities
+     Asymmetric, generous whitespace, magazine feel
+     ------------------------------------------------------------------------- */
+  
+  /* Generous section spacing */
+  .section-spacing {
+    @apply py-16 md:py-24 lg:py-32;
+  }
+  
+  .section-spacing-sm {
+    @apply py-8 md:py-12 lg:py-16;
+  }
+  
+  /* Asymmetric offset - for visual interest */
+  .offset-left {
+    @apply -ml-4 md:-ml-8 lg:-ml-12;
+  }
+  
+  .offset-right {
+    @apply -mr-4 md:-mr-8 lg:-mr-12;
+  }
+  
+  /* Editorial divider - thin, refined */
+  .divider-editorial {
+    @apply border-t border-foreground/10;
+  }
+  
+  .divider-editorial-thick {
+    @apply border-t-2 border-foreground/20;
+  }
+  
+  /* Content width constraints for readability */
+  .prose-width {
+    max-width: 65ch;
+  }
+  
+  .prose-width-wide {
+    max-width: 80ch;
   }
   
   /* -------------------------------------------------------------------------

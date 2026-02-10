@@ -72,7 +72,7 @@ export function AuthForm() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
+        callbackURL: "/today",
       });
     } catch {
       setError("Failed to sign in with Google");
