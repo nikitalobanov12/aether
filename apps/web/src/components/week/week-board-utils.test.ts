@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getDropPulseClass,
+  getDraggingTaskClass,
   moveTaskInWeekData,
   type WeekBoardColumn,
   type WeekBoardData,
@@ -39,5 +41,21 @@ describe("moveTaskInWeekData", () => {
     const result = moveTaskInWeekData(baseData, "task-c", source, source);
 
     expect(result).toEqual(baseData);
+  });
+});
+
+describe("getDropPulseClass", () => {
+  it("returns pulse class only when this is recently dropped column", () => {
+    expect(getDropPulseClass("monday", "monday")).toBe("animate-drop-pulse");
+    expect(getDropPulseClass("monday", "tuesday")).toBe("");
+    expect(getDropPulseClass("monday", null)).toBe("");
+  });
+});
+
+describe("getDraggingTaskClass", () => {
+  it("returns drag ghost class for actively dragged task", () => {
+    expect(getDraggingTaskClass("task-1", "task-1")).toContain("scale-[1.02]");
+    expect(getDraggingTaskClass("task-1", "task-2")).toBe("");
+    expect(getDraggingTaskClass("task-1", null)).toBe("");
   });
 });

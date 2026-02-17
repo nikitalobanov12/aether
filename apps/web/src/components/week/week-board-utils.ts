@@ -116,6 +116,24 @@ export function moveTaskInWeekData<TTask extends { id: string }>(
   };
 }
 
+export function getDropPulseClass(
+  columnId: WeekBoardColumn,
+  recentDropColumn: WeekBoardColumn | null,
+): string {
+  return recentDropColumn === columnId ? "animate-drop-pulse" : "";
+}
+
+export function getDraggingTaskClass(
+  taskId: string,
+  draggingTaskId: string | null,
+): string {
+  if (draggingTaskId !== taskId) {
+    return "";
+  }
+
+  return "scale-[1.02] shadow-xl ring-1 ring-primary/40 opacity-80";
+}
+
 function resolveDayColumn<TTask>(
   data: WeekBoardData<TTask>,
   day: keyof WeekBoardData<TTask>["tasksByDay"],

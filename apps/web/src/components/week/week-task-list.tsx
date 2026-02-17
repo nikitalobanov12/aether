@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addDays, addWeeks, format, isToday, startOfWeek, subWeeks } from "date-fns";
 import {
   Calendar,
@@ -28,7 +28,12 @@ import { toast } from "~/components/ui/sonner";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/react";
-import { moveTaskInWeekData, type WeekBoardColumn } from "~/components/week/week-board-utils";
+import {
+  getDraggingTaskClass,
+  getDropPulseClass,
+  moveTaskInWeekData,
+  type WeekBoardColumn,
+} from "~/components/week/week-board-utils";
 
 type WeekTasks = RouterOutputs["task"]["getThisWeek"];
 type DayTask = WeekTasks["tasksByDay"]["monday"][number];
@@ -70,6 +75,7 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }));
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [activeDropColumn, setActiveDropColumn] = useState<WeekBoardColumn | null>(null);
+  const [recentDropColumn, setRecentDropColumn] = useState<WeekBoardColumn | null>(null);
   const [mobileColumn, setMobileColumn] = useState<WeekBoardColumn>(() => {
     const day = new Date().getUTCDay();
     return DAY_NAMES[day] ?? "monday";
@@ -80,6 +86,7 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
     sourceColumn: WeekBoardColumn;
     destinationColumn: WeekBoardColumn;
   } | null>(null);
+  const dropAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const weekStartDate = useMemo(() => format(weekStart, "yyyy-MM-dd"), [weekStart]);
 
@@ -156,6 +163,14 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
       pendingMoveRef.current = null;
       setDraggingTaskId(null);
       setActiveDropColumn(null);
+
+      if (dropAnimationTimerRef.current) {
+        clearTimeout(dropAnimationTimerRef.current);
+      }
+      dropAnimationTimerRef.current = setTimeout(() => {
+        setRecentDropColumn(null);
+      }, 420);
+
       void utils.task.getThisWeek.invalidate();
       void utils.task.getToday.invalidate();
       void utils.task.getByDateRange.invalidate();
@@ -358,8 +373,17 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
     const pendingMove = pendingMoveRef.current;
     if (!pendingMove || !draggingTaskId) return;
 
+    setRecentDropColumn(destinationColumn);
     handleMoveTask(draggingTaskId, pendingMove.sourceColumn, destinationColumn);
   };
+
+  useEffect(() => {
+    return () => {
+      if (dropAnimationTimerRef.current) {
+        clearTimeout(dropAnimationTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -425,6 +449,7 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
                 isAlert={column.isAlert}
                 draggingTaskId={draggingTaskId}
                 activeDropColumn={activeDropColumn}
+                recentDropColumn={recentDropColumn}
                 onTaskDragStart={onTaskDragStart}
                 onTaskDragEnd={onTaskDragEnd}
                 onColumnDragEnter={setActiveDropColumn}
@@ -449,6 +474,7 @@ export function WeekTaskList({ initialData }: WeekTaskListProps) {
               isAlert={mobileActiveColumn.isAlert}
               draggingTaskId={draggingTaskId}
               activeDropColumn={activeDropColumn}
+              recentDropColumn={recentDropColumn}
               onTaskDragStart={onTaskDragStart}
               onTaskDragEnd={onTaskDragEnd}
               onColumnDragEnter={setActiveDropColumn}
@@ -486,6 +512,7 @@ interface WeekColumnProps {
   isAlert?: boolean;
   draggingTaskId: string | null;
   activeDropColumn: WeekBoardColumn | null;
+  recentDropColumn: WeekBoardColumn | null;
   onTaskDragStart: (taskId: string, sourceColumn: WeekBoardColumn) => void;
   onTaskDragEnd: () => void;
   onColumnDragEnter: (column: WeekBoardColumn) => void;
@@ -506,6 +533,7 @@ function WeekColumn({
   isAlert,
   draggingTaskId,
   activeDropColumn,
+  recentDropColumn,
   onTaskDragStart,
   onTaskDragEnd,
   onColumnDragEnter,
@@ -523,6 +551,7 @@ function WeekColumn({
         highlight && "border-primary/40 bg-primary/5",
         isAlert && "border-red-500/40 bg-red-500/5",
         activeDropColumn === columnId && draggingTaskId && "border-primary bg-primary/10 ring-1 ring-primary/50",
+        getDropPulseClass(columnId, recentDropColumn),
       )}
       onDragOver={(event) => {
         event.preventDefault();
@@ -554,6 +583,7 @@ function WeekColumn({
               onTaskDragStart={onTaskDragStart}
               onTaskDragEnd={onTaskDragEnd}
               onMoveTask={onMoveTask}
+              draggingTaskId={draggingTaskId}
               onComplete={onComplete}
               onSnooze={onSnooze}
               onDelete={onDelete}
@@ -572,6 +602,7 @@ interface TaskItemProps {
   onTaskDragStart: (taskId: string, sourceColumn: WeekBoardColumn) => void;
   onTaskDragEnd: () => void;
   onMoveTask: (taskId: string, sourceColumn: WeekBoardColumn, destinationColumn: WeekBoardColumn) => void;
+  draggingTaskId: string | null;
   onComplete: (id: string) => void;
   onSnooze: (id: string) => void;
   onDelete: (id: string) => void;
@@ -584,6 +615,7 @@ function TaskItem({
   onTaskDragStart,
   onTaskDragEnd,
   onMoveTask,
+  draggingTaskId,
   onComplete,
   onSnooze,
   onDelete,
@@ -596,6 +628,7 @@ function TaskItem({
       className={cn(
         "group rounded-xl border border-border/60 bg-background/90 p-2.5 transition-colors hover:bg-muted/50",
         isOverdue && "border-red-500/40 bg-red-500/5",
+        getDraggingTaskClass(task.id, draggingTaskId),
       )}
       draggable
       onDragStart={() => onTaskDragStart(task.id, columnId)}
