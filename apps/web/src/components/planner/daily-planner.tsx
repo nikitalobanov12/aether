@@ -32,6 +32,9 @@ import {
   MapPin,
   Play,
   Sparkles,
+  ListChecks,
+  LayoutGrid,
+  Rows3,
 } from "lucide-react";
 
 import { cn } from "~/lib/utils";
@@ -64,6 +67,11 @@ import { api } from "~/trpc/react";
 import { toast } from "~/components/ui/sonner";
 import { TaskDetailModal } from "~/components/tasks/task-detail-modal";
 import type { RouterOutputs } from "~/trpc/react";
+import {
+  groupTasksForCards,
+  resolveTodayLayout,
+  type TodayLayout,
+} from "~/components/planner/today-layouts";
 
 type TodayTask = RouterOutputs["task"]["getToday"][number];
 type BacklogTask = RouterOutputs["task"]["getBacklog"][number];
@@ -110,6 +118,7 @@ export function DailyPlanner({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isSmartAddEnabled, setIsSmartAddEnabled] = useState(false);
   const [backlogOpen, setBacklogOpen] = useState(false);
+  const [layout, setLayout] = useState<TodayLayout>("checklist");
 
   // Event detail sheet state
   const [selectedEvent, setSelectedEvent] = useState<AgendaItem | null>(null);
@@ -123,6 +132,17 @@ export function DailyPlanner({
   const timelineRef = useRef<HTMLDivElement>(null);
 
   const isViewingToday = isToday(selectedDate);
+
+  useEffect(() => {
+    const savedLayout = resolveTodayLayout(
+      window.localStorage.getItem("aether-today-layout"),
+    );
+    setLayout(savedLayout);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("aether-today-layout", layout);
+  }, [layout]);
 
   // Format dateString for API calls (YYYY-MM-DD)
   const dateString = useMemo(() => {
@@ -522,6 +542,10 @@ export function DailyPlanner({
     return { scheduledItems: scheduled, unscheduledTasks: unscheduled };
   }, [sortedTasks, timeBlocks, googleEvents]);
 
+  const cardGroups = useMemo(() => {
+    return groupTasksForCards(sortedTasks);
+  }, [sortedTasks]);
+
   // All-day events
   const allDayEvents = useMemo(() => {
     return googleEvents.filter((event) => event.allDay);
@@ -687,9 +711,19 @@ export function DailyPlanner({
   };
 
   return (
-    <div className="flex h-full flex-col lg:flex-row">
+    <div
+      className={cn(
+        "flex h-full flex-col",
+        layout === "timeline" && "lg:flex-row",
+      )}
+    >
       {/* Left Panel - Editorial Header + Tasks */}
-      <div className="flex flex-col border-b lg:w-96 lg:border-b-0 lg:border-r border-border/50">
+      <div
+        className={cn(
+          "flex flex-col border-b border-border/50 lg:border-b-0",
+          layout === "timeline" ? "lg:w-96 lg:border-r" : "lg:w-full",
+        )}
+      >
         {/* Editorial Header */}
         <div className="px-6 pt-8 pb-6 lg:pt-12 lg:pb-8">
           {/* Date Navigation */}
@@ -717,6 +751,36 @@ export function DailyPlanner({
               onClick={goToNextDay}
             >
               <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="mb-4 grid grid-cols-3 gap-2 rounded-xl border border-border/60 bg-card/70 p-1">
+            <Button
+              variant={layout === "checklist" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8"
+              onClick={() => setLayout("checklist")}
+            >
+              <ListChecks className="mr-1.5 h-3.5 w-3.5" />
+              Checklist
+            </Button>
+            <Button
+              variant={layout === "timeline" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8"
+              onClick={() => setLayout("timeline")}
+            >
+              <Rows3 className="mr-1.5 h-3.5 w-3.5" />
+              Timeline
+            </Button>
+            <Button
+              variant={layout === "cards" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-8"
+              onClick={() => setLayout("cards")}
+            >
+              <LayoutGrid className="mr-1.5 h-3.5 w-3.5" />
+              Cards
             </Button>
           </div>
 
@@ -834,110 +898,151 @@ export function DailyPlanner({
           )}
         </div>
 
-        {/* Tasks List */}
-        <ScrollArea className="flex-1">
-          <div
-            className="px-6 pb-6 space-y-2"
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-          >
-            {/* All-day events */}
-            {allDayEvents.length > 0 && (
-              <div className="space-y-2 mb-4">
-                <p className="text-eyebrow text-muted-foreground">All Day</p>
-                {allDayEvents.map((event) => (
-                  <button
-                    key={event.id}
-                    type="button"
-                    className="flex w-full items-center gap-3 rounded-lg border border-purple-500/30 bg-purple-500/5 p-3 text-left transition-colors hover:bg-purple-500/10"
-                    onClick={() =>
-                      handleEventClick({ type: "googleEvent", data: event })
-                    }
-                  >
-                    <div className="h-2 w-2 rounded-full bg-purple-500" />
-                    <span className="text-sm font-medium">{event.title}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+        {layout === "cards" ? (
+          <ScrollArea className="flex-1">
+            <div className="grid gap-4 px-6 pb-6 md:grid-cols-2 xl:grid-cols-3">
+              <CardLane
+                title="Overdue"
+                tone="destructive"
+                tasks={cardGroups.overdue}
+                onTaskClick={handleTaskClick}
+              />
+              <CardLane
+                title="Next Up"
+                tone="primary"
+                tasks={cardGroups.nextUp}
+                onTaskClick={handleTaskClick}
+              />
+              <CardLane
+                title="Scheduled"
+                tone="info"
+                tasks={cardGroups.scheduled}
+                onTaskClick={handleTaskClick}
+              />
+              <CardLane
+                title="High Priority"
+                tone="warning"
+                tasks={cardGroups.highPriority}
+                onTaskClick={handleTaskClick}
+              />
+              <CardLane
+                title="Backlog"
+                tone="muted"
+                tasks={cardGroups.backlog}
+                onTaskClick={handleTaskClick}
+              />
+            </div>
+          </ScrollArea>
+        ) : (
+          <ScrollArea className="flex-1">
+            <div
+              className="px-6 pb-6 space-y-2"
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+            >
+              {/* All-day events */}
+              {allDayEvents.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  <p className="text-eyebrow text-muted-foreground">All Day</p>
+                  {allDayEvents.map((event) => (
+                    <button
+                      key={event.id}
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-lg border border-purple-500/30 bg-purple-500/5 p-3 text-left transition-colors hover:bg-purple-500/10"
+                      onClick={() =>
+                        handleEventClick({ type: "googleEvent", data: event })
+                      }
+                    >
+                      <div className="h-2 w-2 rounded-full bg-purple-500" />
+                      <span className="text-sm font-medium">{event.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            {/* Unscheduled Tasks */}
-            {unscheduledTasks.length === 0 && scheduledItems.length === 0 ? (
-              <div className="py-12 text-center">
-                <Circle className="mx-auto mb-3 h-12 w-12 text-muted-foreground/20" />
-                <p className="text-lg font-medium text-muted-foreground">
-                  No tasks for {isViewingToday ? "today" : "this day"}
-                </p>
-                <p className="text-sm text-muted-foreground/60">
-                  Add tasks above or drag from backlog
-                </p>
-              </div>
-            ) : (
-              unscheduledTasks.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  isSelected={isSelected(task.id)}
-                  onComplete={handleComplete}
-                  onSnooze={handleSnooze}
-                  onDelete={handleDelete}
-                  onSetNextUp={handleSetNextUp}
-                  onDragStart={(e) => handleDragStart(e, task.id, "today")}
-                  onSelect={() => setSelectedId(task.id)}
-                  onClick={() => handleTaskClick(task)}
-                  refCallback={(el) => {
-                    if (el) {
-                      taskRefs.current.set(task.id, el);
-                    } else {
-                      taskRefs.current.delete(task.id);
-                    }
-                  }}
-                />
-              ))
-            )}
-
-            {/* Backlog */}
-            <Collapsible open={backlogOpen} onOpenChange={setBacklogOpen}>
-              <CollapsibleTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between text-muted-foreground hover:text-foreground mt-4"
-                >
-                  <div className="flex items-center gap-2">
-                    <Inbox className="h-4 w-4" />
-                    <span>Backlog ({backlogTasks.length})</span>
-                  </div>
-                  {backlogOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2 space-y-2">
-                {backlogTasks.length === 0 ? (
-                  <p className="py-4 text-center text-sm text-muted-foreground">
-                    No tasks in backlog
+              {/* Unscheduled Tasks */}
+              {unscheduledTasks.length === 0 && scheduledItems.length === 0 ? (
+                <div className="py-12 text-center">
+                  <Circle className="mx-auto mb-3 h-12 w-12 text-muted-foreground/20" />
+                  <p className="text-lg font-medium text-muted-foreground">
+                    No tasks for {isViewingToday ? "today" : "this day"}
                   </p>
-                ) : (
-                  backlogTasks.map((task) => (
-                    <BacklogItem
-                      key={task.id}
-                      task={task}
-                      onAddToToday={() => handleAddToToday(task.id)}
-                      onDelete={handleDelete}
-                      onDragStart={(e) => handleDragStart(e, task.id, "backlog")}
-                    />
-                  ))
-                )}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-        </ScrollArea>
+                  <p className="text-sm text-muted-foreground/60">
+                    Add tasks above or drag from backlog
+                  </p>
+                </div>
+              ) : (
+                unscheduledTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    isSelected={isSelected(task.id)}
+                    onComplete={handleComplete}
+                    onSnooze={handleSnooze}
+                    onDelete={handleDelete}
+                    onSetNextUp={handleSetNextUp}
+                    onDragStart={(e) => handleDragStart(e, task.id, "today")}
+                    onSelect={() => setSelectedId(task.id)}
+                    onClick={() => handleTaskClick(task)}
+                    refCallback={(el) => {
+                      if (el) {
+                        taskRefs.current.set(task.id, el);
+                      } else {
+                        taskRefs.current.delete(task.id);
+                      }
+                    }}
+                  />
+                ))
+              )}
+
+              {/* Backlog */}
+              <Collapsible open={backlogOpen} onOpenChange={setBacklogOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between text-muted-foreground hover:text-foreground mt-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Inbox className="h-4 w-4" />
+                      <span>Backlog ({backlogTasks.length})</span>
+                    </div>
+                    {backlogOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {backlogTasks.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      No tasks in backlog
+                    </p>
+                  ) : (
+                    backlogTasks.map((task) => (
+                      <BacklogItem
+                        key={task.id}
+                        task={task}
+                        onAddToToday={() => handleAddToToday(task.id)}
+                        onDelete={handleDelete}
+                        onDragStart={(e) => handleDragStart(e, task.id, "backlog")}
+                      />
+                    ))
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          </ScrollArea>
+        )}
       </div>
 
       {/* Right Panel - Timeline */}
-      <div className="flex-1 hidden lg:flex flex-col bg-muted/30">
+      <div
+        className={cn(
+          "flex-1 hidden lg:flex flex-col bg-muted/30",
+          layout !== "timeline" && "lg:hidden",
+        )}
+      >
         <div className="px-6 py-4 border-b border-border/50">
           <h2 className="font-medium text-muted-foreground">Timeline</h2>
         </div>
@@ -1648,5 +1753,53 @@ function BacklogItem({
         </DropdownMenu>
       </div>
     </div>
+  );
+}
+
+interface CardLaneProps {
+  title: string;
+  tone: "destructive" | "primary" | "info" | "warning" | "muted";
+  tasks: TodayTask[];
+  onTaskClick: (task: TodayTask) => void;
+}
+
+function CardLane({ title, tone, tasks, onTaskClick }: CardLaneProps) {
+  const toneClasses = {
+    destructive: "border-red-500/40 bg-red-500/5",
+    primary: "border-primary/40 bg-primary/5",
+    info: "border-blue-500/40 bg-blue-500/5",
+    warning: "border-orange-500/40 bg-orange-500/5",
+    muted: "border-border bg-card",
+  };
+
+  return (
+    <section className={cn("rounded-2xl border p-3", toneClasses[tone])}>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
+        <Badge variant="secondary" className="text-[10px]">
+          {tasks.length}
+        </Badge>
+      </div>
+      <div className="space-y-2">
+        {tasks.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No tasks</p>
+        ) : (
+          tasks.slice(0, 6).map((task) => (
+            <button
+              key={task.id}
+              type="button"
+              className="w-full rounded-xl border border-border/60 bg-background/80 px-3 py-2 text-left transition hover:border-border hover:bg-background"
+              onClick={() => onTaskClick(task)}
+            >
+              <p className="truncate text-sm font-medium">{task.title}</p>
+              <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="capitalize">{task.priority}</span>
+                {task.project && <span>• {task.project.title}</span>}
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+    </section>
   );
 }

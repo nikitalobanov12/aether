@@ -47,12 +47,12 @@ interface SidebarProps {
 const mainNavigation = [
   { name: "Today", href: "/today", icon: Sun },
   { name: "This Week", href: "/week", icon: CalendarDays },
-  { name: "Insights", href: "/insights", icon: BarChart3 },
+  { name: "Calendar", href: "/calendar", icon: Calendar },
 ];
 
 const secondaryNavigation = [
   { name: "Goals", href: "/goals", icon: Target },
-  { name: "Calendar", href: "/calendar", icon: Calendar },
+  { name: "Insights", href: "/insights", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
