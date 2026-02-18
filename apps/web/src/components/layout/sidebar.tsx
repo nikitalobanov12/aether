@@ -12,8 +12,10 @@ import {
   CalendarDays,
   FolderKanban,
   BarChart3,
+  ChevronsLeft,
+  ChevronsRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
@@ -35,6 +37,11 @@ import {
 } from "~/components/ui/tooltip";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
+import {
+  resolveSidebarExpanded,
+  serializeSidebarExpanded,
+  SIDEBAR_EXPANDED_STORAGE_KEY,
+} from "~/components/layout/sidebar-state";
 
 interface SidebarProps {
   user: {
@@ -57,12 +64,39 @@ const secondaryNavigation = [
 ];
 
 // Collapsed icon-only navigation
-function CollapsedNav() {
+function CollapsedNav({
+  isExpanded,
+  onToggle,
+}: {
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <TooltipProvider delayDuration={0}>
       <nav className="flex flex-col items-center gap-1 px-2 py-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggle}
+              className="mb-1 h-10 w-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {isExpanded ? (
+                <ChevronsLeft className="h-4 w-4" />
+              ) : (
+                <ChevronsRight className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {isExpanded ? "Collapse" : "Expand"} sidebar
+          </TooltipContent>
+        </Tooltip>
+
         {/* Main navigation */}
         {mainNavigation.map((item) => {
           const isActive = pathname === item.href;
@@ -330,9 +364,27 @@ function UserMenu({ user, collapsed }: { user: SidebarProps["user"]; collapsed?:
   );
 }
 
-// Main sidebar component - icon-only with hover expansion
+// Main sidebar component - icon rail with button-controlled expansion
 export function Sidebar({ user }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    const storedValue = window.localStorage.getItem(
+      SIDEBAR_EXPANDED_STORAGE_KEY,
+    );
+    setIsExpanded(resolveSidebarExpanded(storedValue));
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      SIDEBAR_EXPANDED_STORAGE_KEY,
+      serializeSidebarExpanded(isExpanded),
+    );
+  }, [isExpanded]);
+
+  const toggleSidebar = () => {
+    setIsExpanded((value) => !value);
+  };
 
   return (
     <>
@@ -354,7 +406,7 @@ export function Sidebar({ user }: SidebarProps) {
 
         {/* Navigation */}
         <ScrollArea className="flex-1">
-          <CollapsedNav />
+          <CollapsedNav isExpanded={isExpanded} onToggle={toggleSidebar} />
         </ScrollArea>
 
         {/* User menu */}
@@ -363,32 +415,33 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
       </aside>
 
-      {/* Expanded overlay - appears on hover */}
-      <div
-        className="hidden md:block fixed left-16 top-0 h-full z-20"
-        onMouseEnter={() => setIsExpanded(true)}
-        onMouseLeave={() => setIsExpanded(false)}
-      >
-        {/* Invisible trigger zone */}
-        <div className="absolute left-0 top-0 h-full w-2" />
-
-        {/* Expanded panel */}
+      {/* Expanded sidebar panel - button controlled */}
+      <div className="hidden md:block fixed left-16 top-0 h-full z-20">
         <div
           className={cn(
             "h-full w-64 bg-sidebar border-r border-border/50 shadow-xl transition-all duration-300 ease-out",
             isExpanded
               ? "translate-x-0 opacity-100"
-              : "-translate-x-full opacity-0 pointer-events-none"
+              : "-translate-x-2 opacity-0 pointer-events-none"
           )}
         >
           {/* Header */}
-          <div className="flex h-16 items-center border-b border-border/50 px-4">
+          <div className="flex h-16 items-center justify-between border-b border-border/50 px-4">
             <span className="font-display text-xl tracking-tight">Aether</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={toggleSidebar}
+              aria-label="Collapse sidebar"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Navigation */}
           <ScrollArea className="flex-1 h-[calc(100%-8rem)]">
-            <ExpandedNav onItemClick={() => setIsExpanded(false)} />
+            <ExpandedNav />
           </ScrollArea>
 
           {/* User */}
