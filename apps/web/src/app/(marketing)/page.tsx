@@ -161,7 +161,7 @@ export default function LandingPage() {
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            <img src="/favicon.svg" alt="Aether" className="h-8 w-8 rounded-lg" />
+            {/* <img src="/favicon.svg" alt="Aether" className="h-8 w-8 rounded-lg" /> */}
             <span className="font-display text-xl tracking-tight">Aether</span>
           </motion.div>
 
@@ -266,12 +266,12 @@ export default function LandingPage() {
             >
               {/* Image frame */}
               <div className="relative rounded-xl overflow-hidden border border-border shadow-2xl shadow-black/10 dark:shadow-black/30">
-                <img
+                {/* <img
                   src="/screenshots/hero-app.webp"
                   alt="Aether app showing unified calendar, tasks, and goals"
                   className="w-full h-auto block"
                   loading="eager"
-                />
+                /> */}
               </div>
 
               {/* Caption */}
@@ -410,7 +410,7 @@ export default function LandingPage() {
                   className="flex flex-col items-center gap-2"
                 >
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-primary/10 border-2 border-primary flex items-center justify-center">
-                    <img src="/favicon.svg" alt="Aether" className="w-8 h-8" />
+                    {/* <img src="/favicon.svg" alt="Aether" className="w-8 h-8" /> */}
                   </div>
                   <span className="text-xs text-primary font-semibold">Aether</span>
                 </motion.div>
@@ -893,7 +893,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-3">
-              <img src="/favicon.svg" alt="Aether" className="h-7 w-7 rounded-md" />
+              {/* <img src="/favicon.svg" alt="Aether" className="h-7 w-7 rounded-md" /> */}
               <span className="font-display font-semibold">Aether</span>
             </div>
 
