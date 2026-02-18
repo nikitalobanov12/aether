@@ -25,7 +25,7 @@ export default async function DashboardLayout({
     <KeyboardProvider>
       <div className="flex h-screen overflow-hidden bg-background">
         <Sidebar user={user} />
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* TopBar only shown on mobile */}
           <div className="md:hidden">
             <TopBar user={user} />

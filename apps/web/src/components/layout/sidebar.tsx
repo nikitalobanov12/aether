@@ -14,6 +14,7 @@ import {
   BarChart3,
   ChevronsLeft,
   ChevronsRight,
+  type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -38,6 +39,8 @@ import {
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
 import {
+  getDesktopSidebarWidthClass,
+  getSidebarLabelAnimationClass,
   resolveSidebarExpanded,
   serializeSidebarExpanded,
   SIDEBAR_EXPANDED_STORAGE_KEY,
@@ -63,166 +66,154 @@ const secondaryNavigation = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-// Collapsed icon-only navigation
-function CollapsedNav({
+function SidebarNavItem({
+  href,
+  icon: Icon,
+  label,
+  isActive,
+  isExpanded,
+  onClick,
+}: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  isActive: boolean;
+  isExpanded: boolean;
+  onClick?: () => void;
+}) {
+  const link = (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "group flex items-center rounded-xl transition-all duration-200",
+        isExpanded
+          ? "mx-2 gap-3 px-3 py-2.5"
+          : "mx-auto h-10 w-10 justify-center",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      <span
+        className={cn(
+          "truncate whitespace-nowrap text-sm font-medium transition-all duration-200",
+          getSidebarLabelAnimationClass(isExpanded)
+        )}
+      >
+        {label}
+      </span>
+    </Link>
+  );
+
+  if (isExpanded) {
+    return link;
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function DesktopNav({
   isExpanded,
   onToggle,
+  onItemClick,
+  showToggle = true,
 }: {
   isExpanded: boolean;
-  onToggle: () => void;
+  onToggle?: () => void;
+  onItemClick?: () => void;
+  showToggle?: boolean;
 }) {
   const pathname = usePathname();
 
   return (
     <TooltipProvider delayDuration={0}>
-      <nav className="flex flex-col items-center gap-1 px-2 py-3">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggle}
-              className="mb-1 h-10 w-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-              aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              {isExpanded ? (
-                <ChevronsLeft className="h-4 w-4" />
-              ) : (
-                <ChevronsRight className="h-4 w-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            {isExpanded ? "Collapse" : "Expand"} sidebar
-          </TooltipContent>
-        </Tooltip>
+      <nav className="flex flex-col gap-1 py-3">
+        {showToggle && onToggle && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className={cn(
+                  "h-10 w-10 rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+                  isExpanded ? "mx-2 self-end" : "mx-auto"
+                )}
+                aria-label={isExpanded ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                {isExpanded ? (
+                  <ChevronsLeft className="h-4 w-4" />
+                ) : (
+                  <ChevronsRight className="h-4 w-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {isExpanded ? "Collapse" : "Expand"} sidebar
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-        {/* Main navigation */}
-        {mainNavigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Tooltip key={item.name}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                {item.name}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-
-        {/* Divider */}
-        <div className="my-2 w-6 border-t border-border/50" />
-
-        {/* Secondary navigation */}
-        {secondaryNavigation.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Tooltip key={item.name}>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200",
-                    isActive
-                      ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                {item.name}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </nav>
-    </TooltipProvider>
-  );
-}
-
-// Expanded navigation overlay
-function ExpandedNav({ onItemClick }: { onItemClick?: () => void }) {
-  const pathname = usePathname();
-
-  return (
-    <nav className="flex flex-col gap-0.5 px-3 py-2">
       {/* Main navigation */}
-      <div className="mb-3">
-        <p className="px-3 py-1.5 text-eyebrow text-muted-foreground">Plan</p>
+      <div className="mb-2">
+        {isExpanded && (
+          <p className="px-5 py-1.5 text-eyebrow text-muted-foreground">Plan</p>
+        )}
         {mainNavigation.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
+            <SidebarNavItem
               key={item.name}
               href={item.href}
+              icon={item.icon}
+              label={item.name}
+              isActive={isActive}
+              isExpanded={isExpanded}
               onClick={onItemClick}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <item.icon
-                className={cn(
-                  "h-5 w-5 flex-shrink-0",
-                  isActive ? "text-primary-foreground" : "text-muted-foreground"
-                )}
-              />
-              <span>{item.name}</span>
-            </Link>
+            />
           );
         })}
       </div>
 
-      {/* Goals tree */}
-      <GoalsTree onItemClick={onItemClick} />
+      {isExpanded && <GoalsTree onItemClick={onItemClick} />}
 
       {/* Divider */}
-      <div className="my-3 border-t border-border/50" />
+      <div className={cn("my-2 border-t border-border/50", isExpanded ? "mx-3" : "mx-5")} />
 
       {/* Secondary navigation */}
       <div>
-        <p className="px-3 py-1.5 text-eyebrow text-muted-foreground">
-          Organize
-        </p>
+        {isExpanded && (
+          <p className="px-5 py-1.5 text-eyebrow text-muted-foreground">
+            Organize
+          </p>
+        )}
         {secondaryNavigation.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
           return (
-            <Link
+            <SidebarNavItem
               key={item.name}
               href={item.href}
+              icon={item.icon}
+              label={item.name}
+              isActive={isActive}
+              isExpanded={isExpanded}
               onClick={onItemClick}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
-                isActive
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <item.icon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
-              <span>{item.name}</span>
-            </Link>
+            />
           );
         })}
       </div>
-    </nav>
+      </nav>
+    </TooltipProvider>
   );
 }
 
@@ -387,70 +378,49 @@ export function Sidebar({ user }: SidebarProps) {
   };
 
   return (
-    <>
-      {/* Collapsed sidebar - always visible */}
-      <aside className="hidden md:flex w-16 flex-col border-r border-border/50 bg-sidebar z-30">
-        {/* Logo */}
-        <div className="flex h-16 items-center justify-center border-b border-border/50">
-          <Link href="/today" className="group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/30 blur-md rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative bg-primary h-9 w-9 flex items-center justify-center rounded-xl shadow-sm">
-                <span className="text-primary-foreground text-lg font-bold font-display">
-                  A
-                </span>
-              </div>
+    <aside
+      className={cn(
+        "hidden md:flex shrink-0 flex-col border-r border-border/50 bg-sidebar transition-[width] duration-300 ease-out",
+        getDesktopSidebarWidthClass(isExpanded)
+      )}
+    >
+      <div
+        className={cn(
+          "flex h-16 items-center border-b border-border/50 transition-[padding] duration-300",
+          isExpanded ? "justify-between px-4" : "justify-center px-0"
+        )}
+      >
+        <Link href="/today" className="group">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-lg bg-primary/30 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
+            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm">
+              <span className="text-lg font-bold text-primary-foreground font-display">A</span>
             </div>
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <ScrollArea className="flex-1">
-          <CollapsedNav isExpanded={isExpanded} onToggle={toggleSidebar} />
-        </ScrollArea>
-
-        {/* User menu */}
-        <div className="border-t border-border/50 p-3 flex justify-center">
-          <UserMenu user={user} collapsed />
-        </div>
-      </aside>
-
-      {/* Expanded sidebar panel - button controlled */}
-      <div className="hidden md:block fixed left-16 top-0 h-full z-20">
-        <div
+          </div>
+        </Link>
+        <span
           className={cn(
-            "h-full w-64 bg-sidebar border-r border-border/50 shadow-xl transition-all duration-300 ease-out",
-            isExpanded
-              ? "translate-x-0 opacity-100"
-              : "-translate-x-2 opacity-0 pointer-events-none"
+            "truncate whitespace-nowrap pr-1 font-display text-xl tracking-tight transition-all duration-200",
+            getSidebarLabelAnimationClass(isExpanded)
           )}
         >
-          {/* Header */}
-          <div className="flex h-16 items-center justify-between border-b border-border/50 px-4">
-            <span className="font-display text-xl tracking-tight">Aether</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-              onClick={toggleSidebar}
-              aria-label="Collapse sidebar"
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Navigation */}
-          <ScrollArea className="flex-1 h-[calc(100%-8rem)]">
-            <ExpandedNav />
-          </ScrollArea>
-
-          {/* User */}
-          <div className="absolute bottom-0 left-0 right-0 border-t border-border/50 p-3 bg-sidebar">
-            <UserMenu user={user} />
-          </div>
-        </div>
+          Aether
+        </span>
       </div>
-    </>
+
+      <ScrollArea className="flex-1 py-1">
+        <DesktopNav isExpanded={isExpanded} onToggle={toggleSidebar} />
+      </ScrollArea>
+
+      <div
+        className={cn(
+          "border-t border-border/50 p-3 transition-all duration-200",
+          isExpanded ? "" : "flex justify-center"
+        )}
+      >
+        <UserMenu user={user} collapsed={!isExpanded} />
+      </div>
+    </aside>
   );
 }
 
@@ -484,7 +454,11 @@ export function MobileNav({ user }: SidebarProps) {
 
         {/* Navigation */}
         <ScrollArea className="flex-1 py-4">
-          <ExpandedNav onItemClick={() => setOpen(false)} />
+          <DesktopNav
+            isExpanded
+            showToggle={false}
+            onItemClick={() => setOpen(false)}
+          />
         </ScrollArea>
 
         {/* User menu */}
